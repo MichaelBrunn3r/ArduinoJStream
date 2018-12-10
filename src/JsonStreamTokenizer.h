@@ -30,6 +30,8 @@ class JsonStreamTokenizer {
         void readStr();
         bool matchStr(const char kw[]);
 
+        /** @brief Returns true if a character is a valid json whitespace character **/
         inline bool isWhitespace(const char c) const;
+        /** @brief Returns true if a character is a valid prefix of a json number **/
         inline bool isNumStart(const char c) const;
 };

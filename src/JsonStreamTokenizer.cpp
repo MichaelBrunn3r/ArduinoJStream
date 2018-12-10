@@ -15,6 +15,8 @@ JsonStreamTokenizer::~JsonStreamTokenizer() {
 void JsonStreamTokenizer::tokenize(String str) {tokenize(new StringStream(str));}
 
 void JsonStreamTokenizer::tokenize(InputStream* is) {
+    currentToken = Token::NONE;
+    currentVal = "";
     this->is = is;
 }
 
