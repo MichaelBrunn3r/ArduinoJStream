@@ -8,13 +8,8 @@
 
 class JsonStreamTokenizer {
     public:
-        struct Token {
-            enum class Type : byte {DOC_START, DOC_END, OBJ_START, OBJ_END, ARR_START, ARR_END, COLON, COMMA, KEY, NUM, STR, NUL, BOOL, TOKEN_ERROR, TOKEN_NULL};
-            Type type;
-            String val;
-
-            static const char* typeToStr(Type t);
-        };
+        enum class Token : byte {NONE, OBJ_START, OBJ_END, ARR_START, ARR_END, COLON, COMMA, KW_NULL, KW_TRUE, KW_FALSE, NUM, STR, ERROR};
+        static const char* tokenToStr(Token t);
 
         JsonStreamTokenizer();
         ~JsonStreamTokenizer();
@@ -23,11 +18,18 @@ class JsonStreamTokenizer {
         void tokenize(InputStream* is);
         
         bool hasNext();
-        Token peek();
-        Token next();
+        Token peek(String* buf);
+        Token next(String* buf);
     private:
         InputStream* is;
-        Token current = Token{Token::Type::TOKEN_NULL, ""};
-        bool isWhitespace(const char c) const;
+        Token currentToken = Token::NONE;
+        String currentVal = "";
+
         void skipWhitespace() const;
+        void readNumber();
+        void readString();
+        bool readKeyword(const char kw[]);
+
+        inline bool isWhitespace(const char c) const;
+        inline bool isNumStart(const char c) const;
 };

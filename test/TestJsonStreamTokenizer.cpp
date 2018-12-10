@@ -15,25 +15,26 @@ static String jsonExample1 =
         \"email\": \"ardu@ino.com\", \
         \"int\": 198, \
         \"double\": -2.346326, \
-        \"large_num\": 0.124E-123 \
+        \"large_num\": 0.124E-123, \
+        \"false\": false, \
+        \"true\": true, \
+        \"null\": null \
     }";
 
 SCENARIO("Token Type to String") {
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::DOC_START)) == "DOC_START");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::DOC_END)) == "DOC_END");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::OBJ_START)) == "{");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::OBJ_END)) == "}");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::ARR_START)) == "[");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::ARR_END)) == "]");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::COLON)) == ":");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::COMMA)) == ",");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::KEY)) == "KEY");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::NUM)) == "NUM");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::STR)) == "STR");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::NUL)) == "NUL");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::BOOL)) == "BOOL");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::TOKEN_ERROR)) == "ERROR");
-    REQUIRE(String(JsonStreamTokenizer::Token::typeToStr(JsonStreamTokenizer::Token::Type::TOKEN_NULL)) == "TOKEN_NULL");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::NONE)) == "NONE");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::OBJ_START)) == "{");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::OBJ_END)) == "}");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::ARR_START)) == "[");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::ARR_END)) == "]");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::COLON)) == ":");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::COMMA)) == ",");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::NUM)) == "NUM");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::STR)) == "STR");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::KW_NULL)) == "null");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::KW_TRUE)) == "true");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::KW_FALSE)) == "false");
+    REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::ERROR)) == "ERROR");
 }
 
 SCENARIO("peek() and next() return the same Token") {
@@ -41,11 +42,14 @@ SCENARIO("peek() and next() return the same Token") {
     auto tok = JsonStreamTokenizer();
     tok.tokenize(new StringStream(json));
     while(tok.hasNext()) {
-        auto peek = tok.peek();
-        auto next = tok.next();
-        REQUIRE_FALSE(peek.type == JsonStreamTokenizer::Token::Type::TOKEN_ERROR);
-        REQUIRE(peek.type == next.type);
-        REQUIRE(peek.val == next.val);
+        String peekVal = "";
+        String nextVal = "";
+        auto peek = tok.peek(&peekVal);
+        auto next = tok.next(&nextVal);
+
+        REQUIRE(peek == next);
+        REQUIRE_FALSE(peek == JsonStreamTokenizer::Token::NONE);
+        REQUIRE(peekVal == nextVal);
     }
     REQUIRE_FALSE(tok.hasNext());
 }
