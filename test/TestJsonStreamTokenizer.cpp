@@ -2,6 +2,7 @@
 #include "catch.hpp"
 
 #include <iostream>
+#include <utility>
 
 #include <Arduino.h>
 #include <JsonStreamTokenizer.h>
@@ -37,10 +38,32 @@ SCENARIO("Token Type to String") {
     REQUIRE(String(JsonStreamTokenizer::tokenToStr(JsonStreamTokenizer::Token::ERROR)) == "ERROR");
 }
 
-SCENARIO("peek() and next() return the same Token") {
-    String json = jsonExample1;
+/**
+ * Test if the Tokenizer tokenizes the basic building block Tokens (everything except a String or a Number) correctly
+ */
+SCENARIO("Tokenize basic Tokens") {
     auto tok = JsonStreamTokenizer();
-    tok.tokenize(new StringStream(json));
+    std::pair<String, JsonStreamTokenizer::Token> tokens[] = 
+        {{"{", JsonStreamTokenizer::Token::OBJ_START},{"}", JsonStreamTokenizer::Token::OBJ_END},{"[", JsonStreamTokenizer::Token::ARR_START},{"]", JsonStreamTokenizer::Token::ARR_END}, 
+        {":", JsonStreamTokenizer::Token::COLON}, {",", JsonStreamTokenizer::Token::COMMA}, {"null", JsonStreamTokenizer::Token::KW_NULL}, {"true", JsonStreamTokenizer::Token::KW_TRUE}, 
+        {"false", JsonStreamTokenizer::Token::KW_FALSE}};
+    
+    for(int i=0; i<sizeof(tokens)/sizeof(std::pair<String, JsonStreamTokenizer::Token>); i++) {
+        tok.tokenize(new StringStream(tokens[i].first));
+        REQUIRE(tok.hasNext());
+        String buf = "";
+        REQUIRE(tok.next(&buf) == tokens[i].second);
+        REQUIRE(buf == "");
+        REQUIRE_FALSE(tok.hasNext());
+    }
+}
+
+/**
+ * Test if 'JsonStreamTokenizer::peek' and 'JsonStreamTokenizer::next' return the same Tokens
+ */
+SCENARIO("peek() == next()") {
+    auto tok = JsonStreamTokenizer();
+    tok.tokenize(new StringStream(jsonExample1));
     while(tok.hasNext()) {
         String peekVal = "";
         String nextVal = "";
