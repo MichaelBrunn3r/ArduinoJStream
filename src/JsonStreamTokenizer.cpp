@@ -53,22 +53,22 @@ JsonStreamTokenizer::Token JsonStreamTokenizer::next(String* buf) {
         else if(c == ',') {is->next(); return Token::COMMA;}
         else if(c == '"') { 
             is->next(); // Skip opening "
-            readString();
+            readStr();
             *buf = currentVal;
             if(!is->hasNext() || is->peek() != '"') return Token::ERROR;
             is->next(); // Skip closing "
             return Token::STR;
         } else if(c == 't' || c == 'f' || c == 'n'){
             Token t = Token::ERROR;
-            
-            if(c == 't' && readKeyword("true")) t = Token::KW_TRUE;
-            else if(c == 'f' && readKeyword("false")) t = Token::KW_FALSE;
-            else if(c == 'n' && readKeyword("null")) t = Token::KW_NULL;
+
+            if(c == 't' && matchStr("true")) t = Token::KW_TRUE;
+            else if(c == 'f' && matchStr("false")) t = Token::KW_FALSE;
+            else if(c == 'n' && matchStr("null")) t = Token::KW_NULL;
 
             if(t == Token::ERROR) *buf = new char[1]{c};
             return t;
         } else if(isdigit(c) || c == '-') {
-            readNumber();
+            readNum();
             *buf = currentVal;
             return Token::NUM;
         } else {
@@ -109,7 +109,7 @@ void JsonStreamTokenizer::skipWhitespace() const {
     }
 }
 
-void JsonStreamTokenizer::readNumber() {
+void JsonStreamTokenizer::readNum() {
     currentVal = "";
     while(is->hasNext()) {
         char c = is->peek();
@@ -118,7 +118,7 @@ void JsonStreamTokenizer::readNumber() {
     }
 }
 
-void JsonStreamTokenizer::readString() {
+void JsonStreamTokenizer::readStr() {
     currentVal = "";
     while(is->hasNext()) {
         if(is->peek() == '"') break;
@@ -126,7 +126,7 @@ void JsonStreamTokenizer::readString() {
     }
 }
 
-bool JsonStreamTokenizer::readKeyword(const char kw[]) {
+bool JsonStreamTokenizer::matchStr(const char kw[]) {
     for(int i=0; kw[i] != '\0'; i++) {
         if(!is->hasNext() || kw[i] != is->peek()) return false;
         else is->next();

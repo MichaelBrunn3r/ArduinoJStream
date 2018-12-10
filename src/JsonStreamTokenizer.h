@@ -26,9 +26,9 @@ class JsonStreamTokenizer {
         String currentVal = "";
 
         void skipWhitespace() const;
-        void readNumber();
-        void readString();
-        bool readKeyword(const char kw[]);
+        void readNum();
+        void readStr();
+        bool matchStr(const char kw[]);
 
         inline bool isWhitespace(const char c) const;
         inline bool isNumStart(const char c) const;
