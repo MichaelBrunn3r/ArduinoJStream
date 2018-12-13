@@ -1,7 +1,7 @@
 #include "JsonStreamTokenizer.h"
-#include <cctype>
 #include <iostream>
 #include <Streams/StringStream.h>
+#include <JsonUtils.h>
 
 ///////////////////////////////
 // Class JsonStreamTokenizer //
@@ -135,7 +135,3 @@ bool JsonStreamTokenizer::matchStr(const char kw[]) {
     }
     return true;
 }
-
-bool JsonStreamTokenizer::isWhitespace(const char c) const {return c == ' ' || c == '\r' || c == '\n' || c == '\t';}
-
-bool JsonStreamTokenizer::isNumStart(const char c) const { return isdigit(c) || c == '.' || c == '-' || c == '+' || c == 'e' || c == 'E';}
