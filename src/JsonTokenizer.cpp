@@ -65,7 +65,7 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
 
             if(t == Token::ERROR) *buf = new char[1]{c};
             return t;
-        } else if(isdigit(c) || c == '-') {
+        } else if(isNumStart(c)) {
             readNum();
             *buf = currentVal;
             return Token::NUM;
@@ -111,7 +111,7 @@ void JsonTokenizer::readNum() {
     currentVal = "";
     while(is->hasNext()) {
         char c = is->peek();
-        if(isNumStart(c)) currentVal += is->next();
+        if(isNumDigit(c)) currentVal += is->next();
         else break;
     }
 }
