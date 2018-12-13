@@ -14,11 +14,43 @@ class JsonTokenizer {
         JsonTokenizer();
         ~JsonTokenizer();
 
+        /**
+         * @brief Set the json string to tokenize
+         * 
+         * @param str The json string
+         */
         void tokenize(String str);
+        /**
+         * @brief Set the input stream (json) to tokenize
+         * 
+         * @param is The input stream
+         */
         void tokenize(InputStream* is);
         
+        /**
+         * @brief Returns true if the tokenizer has more tokens
+         * 
+         * @return true 
+         * @return false 
+         */
         bool hasNext();
+        /**
+         * @brief Returns the next token without advancing the tokenizer
+         * 
+         * If @param buf is a nullptr, the token value will not be returned (but still captured)
+         * 
+         * @param buf The buffer in which the value of the token will be stored
+         * @return Token The token
+         */
         Token peek(String* buf);
+        /**
+         * @brief Returns the next token from the json tokenizer
+         * 
+         * If @param buf is a nullptr, the token value will neither be returned nor captured
+         * 
+         * @param buf The buffer in which the value of the token will be stored
+         * @return Token The token
+         */
         Token next(String* buf);
     private:
         InputStream* is;
