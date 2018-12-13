@@ -59,9 +59,9 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
         } else if(c == 't' || c == 'f' || c == 'n'){
             Token t = Token::ERROR;
 
-            if(c == 't' && matchStr("true")) t = Token::KW_TRUE;
-            else if(c == 'f' && matchStr("false")) t = Token::KW_FALSE;
-            else if(c == 'n' && matchStr("null")) t = Token::KW_NULL;
+            if(c == 't' && matchStr("true", 4)) t = Token::KW_TRUE;
+            else if(c == 'f' && matchStr("false", 5)) t = Token::KW_FALSE;
+            else if(c == 'n' && matchStr("null", 4)) t = Token::KW_NULL;
 
             if(t == Token::ERROR) *buf = new char[1]{c};
             return t;
@@ -130,8 +130,8 @@ void JsonTokenizer::readStr(bool capture) {
     }
 }
 
-bool JsonTokenizer::matchStr(const char kw[]) {
-    for(int i=0; kw[i] != '\0'; i++) {
+bool JsonTokenizer::matchStr(const char kw[], size_t length) {
+    for(int i=0; i<length; i++) {
         if(!is->hasNext() || kw[i] != is->peek()) return false;
         else is->next();
     }

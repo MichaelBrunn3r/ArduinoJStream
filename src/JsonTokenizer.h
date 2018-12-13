@@ -28,5 +28,5 @@ class JsonTokenizer {
         void skipWhitespace() const;
         void readNum(bool capture);
         void readStr(bool capture);
-        bool matchStr(const char kw[]);
+        bool matchStr(const char kw[], size_t length);
 };
