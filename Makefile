@@ -11,9 +11,9 @@ TEST_SRC_FILES := $(filter-out $(TEST_SRC_EXCLUDE), $(wildcard $(TEST_SRC)/*.cpp
 TEST_OBJ_FILES := $(patsubst %.cpp, $(BIN)/%.o, $(TEST_SRC_FILES))
 
 test: build-test
-	$(BIN)/TestJsonStreamTokenizer
+	$(BIN)/TestJsonTokenizer
 
-build-test: $(TEST_SRC)/catch.hpp Makefile $(BIN)/TestJsonStreamTokenizer
+build-test: $(TEST_SRC)/catch.hpp Makefile $(BIN)/TestJsonTokenizer
 
 clean:
 	- rm -r $(BIN) &>/dev/null
@@ -23,5 +23,5 @@ $(BIN)/%.o : %.cpp
 	- mkdir -p $(@D)
 	g++ -c -o $@ $< -I$(SRC) -I$(TEST_SRC)/MockArduino
 
-$(BIN)/TestJsonStreamTokenizer : $(TEST_SRC)/TestJsonStreamTokenizer.cpp $(SRC_OBJ_FILES) $(TEST_OBJ_FILES)
+$(BIN)/TestJsonTokenizer : $(TEST_SRC)/TestJsonTokenizer.cpp $(SRC_OBJ_FILES) $(TEST_OBJ_FILES)
 	g++ -o $@ $^ -I$(SRC) -I$(TEST_SRC)/MockArduino -ggdb3

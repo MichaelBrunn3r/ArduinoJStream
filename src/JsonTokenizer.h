@@ -6,13 +6,13 @@
 #include <Streams/InputStream.h>
 #include <WString.h>
 
-class JsonStreamTokenizer {
+class JsonTokenizer {
     public:
         enum class Token : byte {NONE, OBJ_START, OBJ_END, ARR_START, ARR_END, COLON, COMMA, KW_NULL, KW_TRUE, KW_FALSE, NUM, STR, ERROR};
         static const char* tokenToStr(Token t);
 
-        JsonStreamTokenizer();
-        ~JsonStreamTokenizer();
+        JsonTokenizer();
+        ~JsonTokenizer();
 
         void tokenize(String str);
         void tokenize(InputStream* is);

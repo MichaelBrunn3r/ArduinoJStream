@@ -1,30 +1,26 @@
-#include "JsonStreamTokenizer.h"
+#include "JsonTokenizer.h"
 #include <iostream>
 #include <Streams/StringStream.h>
 #include <JsonUtils.h>
 
-///////////////////////////////
-// Class JsonStreamTokenizer //
-///////////////////////////////
-
-JsonStreamTokenizer::JsonStreamTokenizer() {}
-JsonStreamTokenizer::~JsonStreamTokenizer() {
+JsonTokenizer::JsonTokenizer() {}
+JsonTokenizer::~JsonTokenizer() {
     delete is;
 }
 
-void JsonStreamTokenizer::tokenize(String str) {tokenize(new StringStream(str));}
+void JsonTokenizer::tokenize(String str) {tokenize(new StringStream(str));}
 
-void JsonStreamTokenizer::tokenize(InputStream* is) {
+void JsonTokenizer::tokenize(InputStream* is) {
     currentToken = Token::NONE;
     currentVal = "";
     this->is = is;
 }
 
-bool JsonStreamTokenizer::hasNext() {
+bool JsonTokenizer::hasNext() {
     return is->hasNext();
 }
 
-JsonStreamTokenizer::Token JsonStreamTokenizer::peek(String* buf) {
+JsonTokenizer::Token JsonTokenizer::peek(String* buf) {
     if(currentToken == Token::NONE) {
         currentToken = next(&currentVal);
     }
@@ -33,7 +29,7 @@ JsonStreamTokenizer::Token JsonStreamTokenizer::peek(String* buf) {
     return currentToken;
 }
 
-JsonStreamTokenizer::Token JsonStreamTokenizer::next(String* buf) {
+JsonTokenizer::Token JsonTokenizer::next(String* buf) {
     if(currentToken != Token::NONE) {
         Token tmp = currentToken;
         *buf = currentVal;
@@ -83,7 +79,7 @@ JsonStreamTokenizer::Token JsonStreamTokenizer::next(String* buf) {
     return Token::ERROR;
 }
 
-const char* JsonStreamTokenizer::tokenToStr(Token t) {
+const char* JsonTokenizer::tokenToStr(Token t) {
     switch(t) {
         case Token::NONE: return "NONE";
         case Token::OBJ_START: return "{";
@@ -105,13 +101,13 @@ const char* JsonStreamTokenizer::tokenToStr(Token t) {
 // Private Methods //
 /////////////////////
 
-void JsonStreamTokenizer::skipWhitespace() const {
+void JsonTokenizer::skipWhitespace() const {
     while(isWhitespace(is->peek())) {
         is->next();
     }
 }
 
-void JsonStreamTokenizer::readNum() {
+void JsonTokenizer::readNum() {
     currentVal = "";
     while(is->hasNext()) {
         char c = is->peek();
@@ -120,7 +116,7 @@ void JsonStreamTokenizer::readNum() {
     }
 }
 
-void JsonStreamTokenizer::readStr() {
+void JsonTokenizer::readStr() {
     currentVal = "";
     while(is->hasNext()) {
         if(is->peek() == '"') break;
@@ -128,7 +124,7 @@ void JsonStreamTokenizer::readStr() {
     }
 }
 
-bool JsonStreamTokenizer::matchStr(const char kw[]) {
+bool JsonTokenizer::matchStr(const char kw[]) {
     for(int i=0; kw[i] != '\0'; i++) {
         if(!is->hasNext() || kw[i] != is->peek()) return false;
         else is->next();
