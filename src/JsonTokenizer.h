@@ -26,7 +26,7 @@ class JsonTokenizer {
         String currentVal = "";
 
         void skipWhitespace() const;
-        void readNum();
-        void readStr();
+        void readNum(bool capture);
+        void readStr(bool capture);
         bool matchStr(const char kw[]);
 };

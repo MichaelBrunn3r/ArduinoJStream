@@ -25,14 +25,14 @@ JsonTokenizer::Token JsonTokenizer::peek(String* buf) {
         currentToken = next(&currentVal);
     }
 
-    *buf = currentVal;
+    if(buf != nullptr) *buf = currentVal;
     return currentToken;
 }
 
 JsonTokenizer::Token JsonTokenizer::next(String* buf) {
     if(currentToken != Token::NONE) {
         Token tmp = currentToken;
-        *buf = currentVal;
+        if(buf != nullptr) *buf = currentVal;
 
         currentToken = Token::NONE;
         currentVal = "";
@@ -51,8 +51,8 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
         else if(c == ',') {is->next(); return Token::COMMA;}
         else if(c == '"') { 
             is->next(); // Skip opening "
-            readStr();
-            *buf = currentVal;
+            readStr(buf != nullptr);
+            if(buf != nullptr) *buf = currentVal;
             if(!is->hasNext() || is->peek() != '"') return Token::ERROR;
             is->next(); // Skip closing "
             return Token::STR;
@@ -66,8 +66,8 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             if(t == Token::ERROR) *buf = new char[1]{c};
             return t;
         } else if(isNumStart(c)) {
-            readNum();
-            *buf = currentVal;
+            readNum(buf != nullptr);
+            if(buf != nullptr) *buf = currentVal;
             return Token::NUM;
         } else {
             *buf = new char[1]{is->next()};
@@ -107,20 +107,26 @@ void JsonTokenizer::skipWhitespace() const {
     }
 }
 
-void JsonTokenizer::readNum() {
+void JsonTokenizer::readNum(bool capture) {
     currentVal = "";
     while(is->hasNext()) {
         char c = is->peek();
-        if(isNumDigit(c)) currentVal += is->next();
+        if(isNumDigit(c)) {
+            char c = is->next();
+            if(capture) currentVal += c;
+        }
         else break;
     }
 }
 
-void JsonTokenizer::readStr() {
+void JsonTokenizer::readStr(bool capture) {
     currentVal = "";
     while(is->hasNext()) {
         if(is->peek() == '"') break;
-        else currentVal += is->next();
+        else {
+            char c = is->next();
+            if(capture) currentVal += c;
+        }
     }
 }
 
