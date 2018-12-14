@@ -124,7 +124,7 @@ bool JsonTokenizer::readInt(bool capture) {
         if(capture) currentVal += is->next();
         else is->next();
 
-        if(!isDecDigit(is->peek())) return false;
+        if(!hasNext() || !isDecDigit(is->peek())) return false;
     }
 
     // An integer starting with 0 cannot be followed by any digits
