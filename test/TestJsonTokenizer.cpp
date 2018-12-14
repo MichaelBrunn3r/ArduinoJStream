@@ -23,19 +23,21 @@ static String jsonExample1 =
     }";
 
 SCENARIO("Token Type to String") {
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::NONE)) == "NONE");
+    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::NaT)) == "NaT");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::OBJ_START)) == "{");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::OBJ_END)) == "}");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::ARR_START)) == "[");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::ARR_END)) == "]");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::COLON)) == ":");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::COMMA)) == ",");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::NUM)) == "NUM");
+    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::INT)) == "INT");
+    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::FRAC)) == "FRAC");
+    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::EXP)) == "EXP");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::STR)) == "STR");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::KW_NULL)) == "null");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::KW_TRUE)) == "true");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::KW_FALSE)) == "false");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::ERROR)) == "ERROR");
+    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::ERR)) == "ERR");
 }
 
 /**
@@ -71,7 +73,7 @@ SCENARIO("peek() == next()") {
         auto next = tok.next(&nextVal);
 
         REQUIRE(peek == next);
-        REQUIRE_FALSE(peek == JsonTokenizer::Token::NONE);
+        REQUIRE_FALSE(peek == JsonTokenizer::Token::NaT);
         REQUIRE(peekVal == nextVal);
     }
     REQUIRE_FALSE(tok.hasNext());

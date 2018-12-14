@@ -11,7 +11,7 @@ JsonTokenizer::~JsonTokenizer() {
 void JsonTokenizer::tokenize(String str) {tokenize(new StringStream(str));}
 
 void JsonTokenizer::tokenize(InputStream* is) {
-    currentToken = Token::NONE;
+    currentToken = Token::NaT;
     currentVal = "";
     this->is = is;
 }
@@ -21,7 +21,7 @@ bool JsonTokenizer::hasNext() {
 }
 
 JsonTokenizer::Token JsonTokenizer::peek(String* buf) {
-    if(currentToken == Token::NONE) {
+    if(currentToken == Token::NaT) {
         currentToken = next(&currentVal);
     }
 
@@ -30,11 +30,11 @@ JsonTokenizer::Token JsonTokenizer::peek(String* buf) {
 }
 
 JsonTokenizer::Token JsonTokenizer::next(String* buf) {
-    if(currentToken != Token::NONE) {
+    if(currentToken != Token::NaT) {
         Token tmp = currentToken;
         if(buf != nullptr) *buf = currentVal;
 
-        currentToken = Token::NONE;
+        currentToken = Token::NaT;
         currentVal = "";
 
         return tmp;
@@ -53,47 +53,57 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             is->next(); // Skip opening "
             readStr(buf != nullptr);
             if(buf != nullptr) *buf = currentVal;
-            if(!is->hasNext() || is->peek() != '"') return Token::ERROR;
+            if(!is->hasNext() || is->peek() != '"') return Token::ERR;
             is->next(); // Skip closing "
             return Token::STR;
-        } else if(c == 't' || c == 'f' || c == 'n'){
-            Token t = Token::ERROR;
-
-            if(c == 't' && matchStr("true", 4)) t = Token::KW_TRUE;
-            else if(c == 'f' && matchStr("false", 5)) t = Token::KW_FALSE;
-            else if(c == 'n' && matchStr("null", 4)) t = Token::KW_NULL;
-
-            if(t == Token::ERROR) *buf = new char[1]{c};
-            return t;
-        } else if(isNumStart(c)) {
-            readNum(buf != nullptr);
+        } else if(c == 't') {
+            if(!matchStr("true", 4)) return Token::ERR;
+            return Token::KW_TRUE;
+        } else if(c == 'f') {
+            if(!matchStr("false", 5)) return Token::ERR;
+            return Token::KW_FALSE;
+        } else if(c == 'n') {
+            if(!matchStr("null", 4)) return Token::ERR;
+            return Token::KW_NULL;
+        } else if(isDecDigit(c) || c == '-') {
+            if (!readInt(buf != nullptr)) return Token::ERR;
             if(buf != nullptr) *buf = currentVal;
-            return Token::NUM;
+            return Token::INT;
+        } else if(c == '.') {
+            if(!readFrac(buf != nullptr)) return Token::ERR;
+            if(buf != nullptr) *buf = currentVal;
+            return Token::FRAC;
+        } else if(c == 'e' || c == 'E') {
+            if(!readExp(buf != nullptr)) return Token::ERR;
+            if(buf != nullptr) *buf = currentVal;
+            return Token::EXP;
         } else {
             *buf = new char[1]{is->next()};
-            return Token::ERROR;
+            return Token::ERR;
         }
     }
 
     *buf = "eof";
-    return Token::ERROR;
+    return Token::ERR;
 }
 
 const char* JsonTokenizer::tokenToStr(Token t) {
     switch(t) {
-        case Token::NONE: return "NONE";
+        case Token::NaT: return "NaT";
         case Token::OBJ_START: return "{";
         case Token::OBJ_END: return "}";
         case Token::ARR_START: return "[";
         case Token::ARR_END: return "]";
         case Token::COLON: return ":";
         case Token::COMMA: return ",";
-        case Token::NUM: return "NUM";
+        case Token::INT: return "INT";
+        case Token::FRAC: return "FRAC";
+        case Token::EXP: return "EXP";
         case Token::STR: return "STR";
         case Token::KW_NULL: return "null";
         case Token::KW_TRUE: return "true";
         case Token::KW_FALSE: return "false";
-        case Token::ERROR: return "ERROR";
+        case Token::ERR: return "ERR";
     }
 }
 
@@ -107,16 +117,67 @@ void JsonTokenizer::skipWhitespace() const {
     }
 }
 
-void JsonTokenizer::readNum(bool capture) {
+bool JsonTokenizer::readInt(bool capture) {
     currentVal = "";
-    while(is->hasNext()) {
-        char c = is->peek();
-        if(isNumDigit(c)) {
-            char c = is->next();
-            if(capture) currentVal += c;
-        }
-        else break;
+
+    if(is->peek() == '-') { // A minus needs to be followed by a digit
+        if(capture) currentVal += is->next();
+        else is->next();
+
+        if(!isDecDigit(is->peek())) return false;
     }
+
+    // An integer starting with 0 cannot be followed by any digits
+    if(is->peek() == '0') { 
+        if(capture) currentVal += is->next();
+        else is->next();
+
+        return true;
+    }
+
+    while(is->hasNext() && isDecDigit(is->peek())) {
+        if(capture) currentVal += is->next();
+        else is->next();
+    }
+    return true;
+}
+
+bool JsonTokenizer::readFrac(bool capture) {
+    is->next(); // Skip '.'
+
+    // A fraction has to have at least one digit
+    if(isDecDigit(is->peek())) {
+        if(capture) currentVal += is->next();
+        else is->next();
+    } else return false;
+
+    while(is->hasNext() && isDecDigit(is->peek())) {
+        if(capture) currentVal += is->next();
+        else is->next();       
+    }
+    return true;
+}
+
+bool JsonTokenizer::readExp(bool capture) {
+    is->next(); // Skip 'e' or 'E'
+
+    // Sign is optional
+    if(is->peek() == '-' || is->peek() == '+') {
+        if(capture) currentVal += is->next();
+        else is->next();
+    }
+
+    // An exponente has to have at least one digit
+    if(isDecDigit(is->peek())) {
+        if(capture) currentVal += is->next();
+        else is->next();
+    } else return false;
+
+    while(is->hasNext() && isDecDigit(is->peek())) {
+        if(capture) currentVal += is->next();
+        else is->next();
+    }
+    return true;
 }
 
 void JsonTokenizer::readStr(bool capture) {
@@ -124,8 +185,8 @@ void JsonTokenizer::readStr(bool capture) {
     while(is->hasNext()) {
         if(is->peek() == '"') break;
         else {
-            char c = is->next();
-            if(capture) currentVal += c;
+            if(capture) currentVal += is->next();
+            else is->next();
         }
     }
 }

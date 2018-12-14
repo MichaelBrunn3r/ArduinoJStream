@@ -8,7 +8,7 @@
 
 class JsonTokenizer {
     public:
-        enum class Token : byte {NONE, OBJ_START, OBJ_END, ARR_START, ARR_END, COLON, COMMA, KW_NULL, KW_TRUE, KW_FALSE, NUM, STR, ERROR};
+        enum class Token : byte {NaT, OBJ_START, OBJ_END, ARR_START, ARR_END, COLON, COMMA, KW_NULL, KW_TRUE, KW_FALSE, INT, FRAC, EXP, STR, ERR};
         static const char* tokenToStr(Token t);
 
         JsonTokenizer();
@@ -54,11 +54,13 @@ class JsonTokenizer {
         Token next(String* buf);
     private:
         InputStream* is;
-        Token currentToken = Token::NONE;
+        Token currentToken = Token::NaT;
         String currentVal = "";
 
         void skipWhitespace() const;
-        void readNum(bool capture);
+        bool readInt(bool capture);
+        bool readFrac(bool capture);
+        bool readExp(bool capture);
         void readStr(bool capture);
         bool matchStr(const char kw[], size_t length);
 };
