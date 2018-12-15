@@ -119,27 +119,28 @@ void JsonTokenizer::skipWhitespace() const {
 
 bool JsonTokenizer::readInt(bool capture) {
     currentVal = "";
+    bool result = false;
 
-    if(is->peek() == '-') { // A minus needs to be followed by a digit
+    if(is->peek() == '-') {
         if(capture) currentVal += is->next();
         else is->next();
-
-        if(!hasNext() || !isDecDigit(is->peek())) return false;
     }
 
     // An integer starting with 0 cannot be followed by any digits
-    if(is->peek() == '0') { 
+    bool startsWithZero = false;
+    if(is->hasNext() && is->peek() == '0') { 
         if(capture) currentVal += is->next();
         else is->next();
-
-        return true;
+        startsWithZero = true;
+        result = true;
     }
 
     while(is->hasNext() && isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
         else is->next();
+        result = !startsWithZero;
     }
-    return true;
+    return result;
 }
 
 bool JsonTokenizer::readFrac(bool capture) {
