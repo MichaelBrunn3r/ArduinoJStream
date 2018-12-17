@@ -65,7 +65,7 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
         } else if(c == 'n') {
             if(!matchStr("null", 4)) return Token::ERR;
             return Token::KW_NULL;
-        } else if(isDecDigit(c) || c == '-') {
+        } else if(Json::isDecDigit(c) || c == '-') {
             if (!readInt(buf != nullptr)) return Token::ERR;
             if(buf != nullptr) *buf = currentVal;
             return Token::INT;
@@ -112,7 +112,7 @@ const char* JsonTokenizer::tokenToStr(Token t) {
 /////////////////////
 
 void JsonTokenizer::skipWhitespace() const {
-    while(isWhitespace(is->peek())) {
+    while(Json::isWhitespace(is->peek())) {
         is->next();
     }
 }
@@ -135,7 +135,7 @@ bool JsonTokenizer::readInt(bool capture) {
         result = true;
     }
 
-    while(is->hasNext() && isDecDigit(is->peek())) {
+    while(is->hasNext() && Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
         else is->next();
         result = !startsWithZero;
@@ -147,12 +147,12 @@ bool JsonTokenizer::readFrac(bool capture) {
     is->next(); // Skip '.'
 
     // A fraction has to have at least one digit
-    if(isDecDigit(is->peek())) {
+    if(Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
         else is->next();
     } else return false;
 
-    while(is->hasNext() && isDecDigit(is->peek())) {
+    while(is->hasNext() && Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
         else is->next();       
     }
@@ -169,12 +169,12 @@ bool JsonTokenizer::readExp(bool capture) {
     }
 
     // An exponente has to have at least one digit
-    if(isDecDigit(is->peek())) {
+    if(Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
         else is->next();
     } else return false;
 
-    while(is->hasNext() && isDecDigit(is->peek())) {
+    while(is->hasNext() && Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
         else is->next();
     }
