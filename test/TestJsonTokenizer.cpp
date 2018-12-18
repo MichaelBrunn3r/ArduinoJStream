@@ -14,6 +14,14 @@ std::ostream& operator << ( std::ostream& os, JsonTokenizer::Token const& value 
     return os;
 }
 
+void matchGeneratedTokens(JsonTokenizer* tok, String json, std::vector<JsonTokenizer::Token> tokens) {
+    tok->tokenize(json);
+    for(int k=0; k<tokens.size(); k++) {
+        REQUIRE(tok->next(nullptr) == tokens[k]);
+    }
+    REQUIRE_FALSE(tok->hasNext());
+}
+
 static String jsonExample1 = 
     "{ \
         \"string2\": \"Nightman\", \
@@ -70,8 +78,7 @@ SCENARIO("Tokenize basic Tokens") {
 SCENARIO("Tokenize numbers") {
     auto tok = JsonTokenizer();
     GIVEN("valid numbers") {
-
-        std::pair<String, std::vector<JsonTokenizer::Token>> nums[] = {
+        std::vector<std::pair<String, std::vector<JsonTokenizer::Token>>> nums = {
             {"0", {JsonTokenizer::Token::INT}},
             {"-0", {JsonTokenizer::Token::INT}},
             {"-97812467", {JsonTokenizer::Token::INT}},
@@ -87,18 +94,12 @@ SCENARIO("Tokenize numbers") {
             {"-0.123e-234", {JsonTokenizer::Token::INT, JsonTokenizer::Token::FRAC, JsonTokenizer::Token::EXP}}
         };
             
-        size_t len = sizeof(nums)/sizeof(std::pair<String, std::vector<JsonTokenizer::Token>>);
-        for(int i=0; i<len; i++) {
-            tok.tokenize(nums[i].first);
-            String buf = "";
-            for(int k=0; k<nums[i].second.size(); k++) {
-                REQUIRE(tok.next(nullptr) == nums[i].second[k]);
-            }
-            REQUIRE_FALSE(tok.hasNext());
+        for(int i=0; i<nums.size(); i++) {
+            matchGeneratedTokens(&tok, nums[i].first, nums[i].second);
         }
     }
     GIVEN("invalid numbers") {
-        std::pair<String, std::vector<JsonTokenizer::Token>> nums[] = {
+        std::vector<std::pair<String, std::vector<JsonTokenizer::Token>>> nums = {
             {"-", {JsonTokenizer::Token::ERR}},
             {"00", {JsonTokenizer::Token::ERR}},
             {"014112", {JsonTokenizer::Token::ERR}},
@@ -106,14 +107,8 @@ SCENARIO("Tokenize numbers") {
             {"-E-3423", {JsonTokenizer::Token::ERR, JsonTokenizer::Token::EXP}}
         };
             
-        size_t len = sizeof(nums)/sizeof(std::pair<String, std::vector<JsonTokenizer::Token>>);
-        for(int i=0; i<len; i++) {
-            tok.tokenize(nums[i].first);
-            String buf = "";
-            for(int k=0; k<nums[i].second.size(); k++) {
-                REQUIRE(tok.next(nullptr) == nums[i].second[k]);
-            }
-            REQUIRE_FALSE(tok.hasNext());
+        for(int i=0; i<nums.size(); i++) {
+            matchGeneratedTokens(&tok, nums[i].first, nums[i].second);
         }
     }
 }
