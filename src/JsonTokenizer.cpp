@@ -75,7 +75,9 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             if(buf != nullptr) *buf = currentVal;
             return Token::EXP;
         } else {
-            *buf = new char[1]{is->next()};
+            errorCode = ParseError::UNKNOWN_CHAR;
+            if(buf != nullptr) *buf = new char[1]{is->next()};
+            else is->next();
             return Token::ERR;
         }
     }
