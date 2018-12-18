@@ -50,11 +50,8 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
         else if(c == ':') {is->next(); return Token::COLON;}
         else if(c == ',') {is->next(); return Token::COMMA;}
         else if(c == '"') { 
-            is->next(); // Skip opening "
-            readStr(buf != nullptr);
+            if(!readStr(buf != nullptr)) return Token::ERR;
             if(buf != nullptr) *buf = currentVal;
-            if(!is->hasNext() || is->peek() != '"') return Token::ERR;
-            is->next(); // Skip closing "
             return Token::STR;
         } else if(c == 't') {
             if(!matchStr("true", 4)) return Token::ERR;
@@ -181,15 +178,38 @@ bool JsonTokenizer::readExp(bool capture) {
     return true;
 }
 
-void JsonTokenizer::readStr(bool capture) {
+bool JsonTokenizer::readStr(bool capture) {
     currentVal = "";
+    if(is->peek() != '"') {
+        errorCode = ParseError::MISSING_QUOTE;
+        return false;
+    }
+    is->next();
+
     while(is->hasNext()) {
-        if(is->peek() == '"') break;
-        else {
+        if(is->peek() == '\\') {
+            is->next();
+            if(is->peek() == 'u') {
+                // TODO ...
+            } else if(Json::isEscapeable(is->peek())) {
+                if(capture) currentVal += Json::escape(is->next());
+                else is->next();
+            } else {
+                errorCode = ParseError::UNESCAPEABLE_CHAR;
+                return false;
+            }
+        } else if(is->peek() == '"') {
+            is->next();
+            return true;
+        } else {
             if(capture) currentVal += is->next();
             else is->next();
         }
     }
+
+    // String wasn't closed properly
+    errorCode = ParseError::MISSING_QUOTE;
+    return false;
 }
 
 bool JsonTokenizer::matchStr(const char kw[], size_t length) {
