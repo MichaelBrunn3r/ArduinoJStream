@@ -11,6 +11,8 @@ class JsonTokenizer {
         enum class Token : byte {NaT, OBJ_START, OBJ_END, ARR_START, ARR_END, COLON, COMMA, KW_NULL, KW_TRUE, KW_FALSE, INT, FRAC, EXP, STR, ERR};
         static const char* tokenToStr(Token t);
 
+        enum class ParseError : byte {NaE, MISSING_QUOTE, UNESCAPEABLE_CHAR, UNKNOWN_CHAR};
+
         JsonTokenizer();
         ~JsonTokenizer();
 
@@ -57,10 +59,12 @@ class JsonTokenizer {
         Token currentToken = Token::NaT;
         String currentVal = "";
 
+        ParseError errorCode = ParseError::NaE;
+
         void skipWhitespace() const;
         bool readInt(bool capture);
         bool readFrac(bool capture);
         bool readExp(bool capture);
-        void readStr(bool capture);
+        bool readStr(bool capture);
         bool matchStr(const char kw[], size_t length);
 };
