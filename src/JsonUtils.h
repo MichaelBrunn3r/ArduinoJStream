@@ -20,4 +20,30 @@ namespace Json {
     bool isNumDigit(const char c) {
         return isDecDigit(c) || c == '-' || c == '+' || c == '.' || c == 'E' || c == 'e';
     }
+
+    /** @brief Returns true if escaping a character results in a char valid in json. 
+     * 
+     * This function is designed to work with Json::escape. Since Json::escape can only escape single characters,
+     * unicode characters (i.e. '\uXXXX') are excluded. They need to be handled seperately.
+    */
+    bool isEscapeable(const char c) {
+        return c == '"' || c == '\\' || c == '/' || c == 'b' || c == 'f' || c == 'n' || c == 'r' || c == 't';
+    }
+
+    /** @brief Tries to escapes a character. Returns the same char, if the resulting char would not be valid in json. */
+    char escape(const char c) {
+        switch(c) {
+            // case '"': return '"';
+            // case '\\': return '\\';
+            // case '/': return '\/';
+
+            // sorted by suspected frequency
+            case 'n': return '\n';
+            case 't': return '\t';
+            case 'r': return '\r';
+            case 'b': return '\b';
+            case 'f': return '\f';
+            default: return c;
+        }
+    }
 }
