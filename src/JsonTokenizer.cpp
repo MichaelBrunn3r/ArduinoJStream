@@ -168,8 +168,14 @@ bool JsonTokenizer::readInt(bool capture) {
 }
 
 bool JsonTokenizer::readFrac(bool capture) {
+    if(!hasNext()) {
+        errorCode = ParseError::UNEXPECTED_EOS;
+        return false;
+    }
+    currentVal = "";
+
     // A fraction has to have at least one digit
-    bool atLeastOneDigit = is->hasNext() && Json::isDecDigit(is->peek());
+    bool atLeastOneDigit = Json::isDecDigit(is->peek());
 
     while(is->hasNext() && Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
@@ -181,8 +187,14 @@ bool JsonTokenizer::readFrac(bool capture) {
 }
 
 bool JsonTokenizer::readExp(bool capture) {
+    if(!hasNext()) {
+        errorCode = ParseError::UNEXPECTED_EOS;
+        return false;
+    }
+    currentVal = "";
+
     // Sign is optional
-    if(is->hasNext() && is->peek() == '-' || is->hasNext() && is->peek() == '+') {
+    if(is->peek() == '-' || is->peek() == '+') {
         if(capture) currentVal += is->next();
         else is->next();
     }
