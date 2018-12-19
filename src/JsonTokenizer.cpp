@@ -170,22 +170,21 @@ bool JsonTokenizer::readFrac(bool capture) {
 
 bool JsonTokenizer::readExp(bool capture) {
     // Sign is optional
-    if(is->peek() == '-' || is->peek() == '+') {
+    if(is->hasNext() && is->peek() == '-' || is->hasNext() && is->peek() == '+') {
         if(capture) currentVal += is->next();
         else is->next();
     }
 
-    // An exponente has to have at least one digit
-    if(Json::isDecDigit(is->peek())) {
-        if(capture) currentVal += is->next();
-        else is->next();
-    } else return false;
+    // An exponent has to have at least one digit
+    bool atLeastOneDigit = is->hasNext() && Json::isDecDigit(is->peek());
 
     while(is->hasNext() && Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
         else is->next();
     }
-    return true;
+
+    if(!atLeastOneDigit) errorCode = ParseError::MALFORMED_EXP;
+    return atLeastOneDigit;
 }
 
 bool JsonTokenizer::readStr(bool capture) {
