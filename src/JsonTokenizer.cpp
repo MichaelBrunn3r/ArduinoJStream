@@ -89,13 +89,12 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             return Token::EXP;
         } else {
             errorCode = ParseError::UNEXPECTED_CHAR;
-            if(buf != nullptr) *buf = new char[1]{is->next()};
-            else is->next();
+            if(buf != nullptr) *buf = new char[1]{c};
             return Token::ERR;
         }
     }
 
-    *buf = "eof";
+    errorCode = ParseError::UNEXPECTED_EOS;
     return Token::ERR;
 }
 
