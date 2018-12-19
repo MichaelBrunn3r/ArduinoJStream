@@ -43,12 +43,12 @@ SCENARIO("Token Type to String") {
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::OBJ_END)) == "}");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::ARR_START)) == "[");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::ARR_END)) == "]");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::COLON)) == ":");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::COMMA)) == ",");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::INT)) == "INT");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::FRAC)) == "FRAC");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::EXP)) == "EXP");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::STR)) == "STR");
+    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::FIELD_NAME)) == "FIELD_NAME");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::KW_NULL)) == "null");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::KW_TRUE)) == "true");
     REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::KW_FALSE)) == "false");
@@ -56,13 +56,13 @@ SCENARIO("Token Type to String") {
 }
 
 /**
- * Test if the Tokenizer tokenizes the basic building block Tokens (everything except a String or a Number) correctly
+ * Test if the Tokenizer tokenizes the basic building block Tokens (everything except a String, Field Name or a Number) correctly
  */
 SCENARIO("Tokenize basic Tokens") {
     auto tok = JsonTokenizer();
     std::pair<String, JsonTokenizer::Token> tokens[] = 
         {{"{", JsonTokenizer::Token::OBJ_START},{"}", JsonTokenizer::Token::OBJ_END},{"[", JsonTokenizer::Token::ARR_START},{"]", JsonTokenizer::Token::ARR_END}, 
-        {":", JsonTokenizer::Token::COLON}, {",", JsonTokenizer::Token::COMMA}, {"null", JsonTokenizer::Token::KW_NULL}, {"true", JsonTokenizer::Token::KW_TRUE}, 
+        {",", JsonTokenizer::Token::COMMA}, {"null", JsonTokenizer::Token::KW_NULL}, {"true", JsonTokenizer::Token::KW_TRUE}, 
         {"false", JsonTokenizer::Token::KW_FALSE}};
     
     for(int i=0; i<sizeof(tokens)/sizeof(std::pair<String, JsonTokenizer::Token>); i++) {

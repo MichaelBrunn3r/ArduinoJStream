@@ -8,10 +8,32 @@
 
 class JsonTokenizer {
     public:
-        enum class Token : byte {NaT, OBJ_START, OBJ_END, ARR_START, ARR_END, COLON, COMMA, KW_NULL, KW_TRUE, KW_FALSE, INT, FRAC, EXP, STR, ERR};
+        enum class Token : byte {
+            NaT = 0, // Not a Token
+            OBJ_START, 
+            OBJ_END, 
+            ARR_START, 
+            ARR_END,  
+            COMMA, 
+            STR, 
+            FIELD_NAME,
+            INT, 
+            FRAC, 
+            EXP,
+            KW_NULL, 
+            KW_TRUE, 
+            KW_FALSE, 
+            ERR
+        };
         static const char* tokenToStr(Token t);
 
-        enum class ParseError : byte {NaE, MISSING_QUOTE, UNESCAPEABLE_CHAR, UNKNOWN_CHAR};
+        enum class ParseError : byte {
+            NaE = 0, // Not an Error
+            UNTERMINATED_STR, 
+            UNESCAPEABLE_CHAR, 
+            UNEXPECTED_EOS, 
+            UNEXPECTED_CHAR
+        };
 
         JsonTokenizer();
         ~JsonTokenizer();

@@ -42,30 +42,43 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
 
     while(is->hasNext()) {
         skipWhitespace();
-        const char c = is->peek();
-        if(c == '[') {is->next(); return Token::ARR_START;}
-        else if(c == ']') {is->next(); return Token::ARR_END;}
-        else if(c == '{') {is->next(); return Token::OBJ_START;}
-        else if(c == '}') {is->next(); return Token::OBJ_END;}
-        else if(c == ':') {is->next(); return Token::COLON;}
-        else if(c == ',') {is->next(); return Token::COMMA;}
-        else if(c == '"') { 
-            if(!readStr(buf != nullptr)) return Token::ERR;
-            if(buf != nullptr) *buf = currentVal;
-            return Token::STR;
-        } else if(c == 't') {
-            if(!matchStr("true", 4)) return Token::ERR;
-            return Token::KW_TRUE;
-        } else if(c == 'f') {
-            if(!matchStr("false", 5)) return Token::ERR;
-            return Token::KW_FALSE;
-        } else if(c == 'n') {
-            if(!matchStr("null", 4)) return Token::ERR;
-            return Token::KW_NULL;
-        } else if(Json::isDecDigit(c) || c == '-') {
+
+        // Check if the character is the start of a number
+        if(Json::isDecDigit(is->peek()) || is->peek() == '-') {
+            // Integers values are handled in special way, because they do not have a usefull prefix (like '"', '.' or 'e').
+            // Calling 'is->next()' would unneccessarily complicate reading an Integer.
+
             if (!readInt(buf != nullptr)) return Token::ERR;
             if(buf != nullptr) *buf = currentVal;
             return Token::INT;
+        }
+
+        const char c = is->next();
+        if(c == '[') return Token::ARR_START;
+        else if(c == ']') return Token::ARR_END;
+        else if(c == '{') return Token::OBJ_START;
+        else if(c == '}') return Token::OBJ_END;
+        else if(c == ',') return Token::COMMA;
+        else if(c == '"') { 
+            // Read String
+            if(!readStr(buf != nullptr)) return Token::ERR;
+            if(buf != nullptr) *buf = currentVal;
+
+            // Test if the String is a field name
+            skipWhitespace();
+            if(is->hasNext() && is->peek() == ':') {
+                is->next();
+                return Token::FIELD_NAME;
+            } else return Token::STR;
+        } else if(c == 't') {
+            if(!matchStr("rue", 3)) return Token::ERR;
+            return Token::KW_TRUE;
+        } else if(c == 'f') {
+            if(!matchStr("alse", 4)) return Token::ERR;
+            return Token::KW_FALSE;
+        } else if(c == 'n') {
+            if(!matchStr("ull", 3)) return Token::ERR;
+            return Token::KW_NULL;
         } else if(c == '.') {
             if(!readFrac(buf != nullptr)) return Token::ERR;
             if(buf != nullptr) *buf = currentVal;
@@ -75,7 +88,7 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             if(buf != nullptr) *buf = currentVal;
             return Token::EXP;
         } else {
-            errorCode = ParseError::UNKNOWN_CHAR;
+            errorCode = ParseError::UNEXPECTED_CHAR;
             if(buf != nullptr) *buf = new char[1]{is->next()};
             else is->next();
             return Token::ERR;
@@ -93,12 +106,12 @@ const char* JsonTokenizer::tokenToStr(Token t) {
         case Token::OBJ_END: return "}";
         case Token::ARR_START: return "[";
         case Token::ARR_END: return "]";
-        case Token::COLON: return ":";
         case Token::COMMA: return ",";
         case Token::INT: return "INT";
         case Token::FRAC: return "FRAC";
         case Token::EXP: return "EXP";
         case Token::STR: return "STR";
+        case Token::FIELD_NAME: return "FIELD_NAME";
         case Token::KW_NULL: return "null";
         case Token::KW_TRUE: return "true";
         case Token::KW_FALSE: return "false";
@@ -143,8 +156,6 @@ bool JsonTokenizer::readInt(bool capture) {
 }
 
 bool JsonTokenizer::readFrac(bool capture) {
-    is->next(); // Skip '.'
-
     // A fraction has to have at least one digit
     if(Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
@@ -159,8 +170,6 @@ bool JsonTokenizer::readFrac(bool capture) {
 }
 
 bool JsonTokenizer::readExp(bool capture) {
-    is->next(); // Skip 'e' or 'E'
-
     // Sign is optional
     if(is->peek() == '-' || is->peek() == '+') {
         if(capture) currentVal += is->next();
@@ -182,18 +191,12 @@ bool JsonTokenizer::readExp(bool capture) {
 
 bool JsonTokenizer::readStr(bool capture) {
     currentVal = "";
-    if(is->peek() != '"') {
-        errorCode = ParseError::MISSING_QUOTE;
-        return false;
-    }
-    is->next();
 
     while(is->hasNext()) {
         if(is->peek() == '\\') {
             is->next();
-            if(is->peek() == 'u') {
-                // TODO ...
-            } else if(Json::isEscapeable(is->peek())) {
+            if(!is->hasNext()) break; // Unterminated String. Break out of loop.
+            else if(Json::isEscapeable(is->peek())) {
                 if(capture) currentVal += Json::escape(is->next());
                 else is->next();
             } else {
@@ -210,7 +213,7 @@ bool JsonTokenizer::readStr(bool capture) {
     }
 
     // String wasn't closed properly
-    errorCode = ParseError::MISSING_QUOTE;
+    errorCode = ParseError::UNTERMINATED_STR;
     return false;
 }
 
