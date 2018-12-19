@@ -32,7 +32,9 @@ class JsonTokenizer {
             UNTERMINATED_STR, 
             UNESCAPEABLE_CHAR, 
             UNEXPECTED_EOS, 
-            UNEXPECTED_CHAR
+            UNEXPECTED_CHAR,
+            MALFORMED_INT,
+            MALFORMED_FRAC
         };
 
         JsonTokenizer();

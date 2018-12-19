@@ -157,16 +157,15 @@ bool JsonTokenizer::readInt(bool capture) {
 
 bool JsonTokenizer::readFrac(bool capture) {
     // A fraction has to have at least one digit
-    if(Json::isDecDigit(is->peek())) {
-        if(capture) currentVal += is->next();
-        else is->next();
-    } else return false;
+    bool atLeastOneDigit = is->hasNext() && Json::isDecDigit(is->peek());
 
     while(is->hasNext() && Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
         else is->next();       
     }
-    return true;
+
+    if(!atLeastOneDigit) errorCode = ParseError::MALFORMED_FRAC;
+    return atLeastOneDigit;
 }
 
 bool JsonTokenizer::readExp(bool capture) {
