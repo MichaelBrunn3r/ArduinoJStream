@@ -37,6 +37,7 @@ class JsonTokenizer {
             MALFORMED_FRAC,
             MALFORMED_EXP
         };
+        static const char* errorToStr(ParseError e);
 
         JsonTokenizer();
         ~JsonTokenizer();
@@ -79,6 +80,8 @@ class JsonTokenizer {
          * @return Token The token
          */
         Token next(String* buf);
+
+        inline ParseError getErrorCode() {return errorCode;}
     private:
         InputStream* is;
         Token currentToken = Token::NaT;

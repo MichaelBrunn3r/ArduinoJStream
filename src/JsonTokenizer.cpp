@@ -119,6 +119,19 @@ const char* JsonTokenizer::tokenToStr(Token t) {
     }
 }
 
+const char* JsonTokenizer::errorToStr(ParseError e) {
+    switch(e) {
+        case ParseError::NaE: return "NaE";
+        case ParseError::UNTERMINATED_STR: return "UNTERMINATED_STR";
+        case ParseError::UNESCAPEABLE_CHAR: return "UNESCAPEABLE_CHAR";
+        case ParseError::UNEXPECTED_EOS: return "UNEXPECTED_EOS"; 
+        case ParseError::UNEXPECTED_CHAR: return "UNEXPECTED_CHAR";
+        case ParseError::MALFORMED_INT: return "MALFORMED_INT";
+        case ParseError::MALFORMED_FRAC: return "MALFORMED_FRAC";
+        case ParseError::MALFORMED_EXP: return "MALFORMED_EXP";
+    }
+}
+
 /////////////////////
 // Private Methods //
 /////////////////////
