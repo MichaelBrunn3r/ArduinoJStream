@@ -21,7 +21,7 @@ clean:
 # Compiles c++ files to object files and puts them in the /bin subfolder
 $(BIN)/%.o : %.cpp
 	- mkdir -p $(@D)
-	g++ -c -o $@ $< -I$(SRC) -I$(TEST_SRC)/MockArduino
+	g++ -c -o $@ $< -I$(SRC) -I$(TEST_SRC)/MockArduino -ggdb3
 
 $(BIN)/TestJsonTokenizer : $(TEST_SRC)/TestJsonTokenizer.cpp $(SRC_OBJ_FILES) $(TEST_OBJ_FILES)
 	g++ -o $@ $^ -I$(SRC) -I$(TEST_SRC)/MockArduino -ggdb3
