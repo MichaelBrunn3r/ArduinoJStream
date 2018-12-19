@@ -111,7 +111,7 @@ const char* JsonTokenizer::tokenToStr(Token t) {
 /////////////////////
 
 void JsonTokenizer::skipWhitespace() const {
-    while(Json::isWhitespace(is->peek())) {
+    while(is->hasNext() && Json::isWhitespace(is->peek())) {
         is->next();
     }
 }
