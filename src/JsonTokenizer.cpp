@@ -81,13 +81,15 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             if(!matchStr("ull", 3)) return Token::ERR;
             return Token::KW_NULL;
         } else if(c == '.') {
-            if(!readFrac(buf != nullptr)) return Token::ERR;
+            bool isValid = readFrac(buf != nullptr); 
             if(buf != nullptr) *buf = currentVal;
-            return Token::FRAC;
+            if(!isValid) return Token::ERR;
+            else return Token::FRAC;
         } else if(c == 'e' || c == 'E') {
-            if(!readExp(buf != nullptr)) return Token::ERR;
+            bool isValid = readExp(buf != nullptr);
             if(buf != nullptr) *buf = currentVal;
-            return Token::EXP;
+            if(!isValid) return Token::ERR;
+            else return Token::EXP;
         } else {
             errorCode = ParseError::UNEXPECTED_CHAR;
             if(buf != nullptr) *buf = new char[1]{c};
@@ -173,10 +175,7 @@ bool JsonTokenizer::readInt(bool capture) {
 }
 
 bool JsonTokenizer::readFrac(bool capture) {
-    if(!hasNext()) {
-        errorCode = ParseError::UNEXPECTED_EOS;
-        return false;
-    }
+    if(!is->hasNext()) {errorCode = ParseError::UNEXPECTED_EOS; return false;}
     currentVal = "";
 
     // A fraction has to have at least one digit
@@ -192,20 +191,18 @@ bool JsonTokenizer::readFrac(bool capture) {
 }
 
 bool JsonTokenizer::readExp(bool capture) {
-    if(!hasNext()) {
-        errorCode = ParseError::UNEXPECTED_EOS;
-        return false;
-    }
     currentVal = "";
 
     // Sign is optional
-    if(is->peek() == '-' || is->peek() == '+') {
+    if(is->hasNext() && is->peek() == '-') {
         if(capture) currentVal += is->next();
         else is->next();
-    }
+    } else if(is->hasNext() && is->peek() == '+') is->next(); // '+' is redundant -> don't save
 
-    // An exponent has to have at least one digit
-    bool atLeastOneDigit = is->hasNext() && Json::isDecDigit(is->peek());
+    if(!is->hasNext()) {errorCode = ParseError::UNEXPECTED_EOS; return false;} // An exponent requires at least one decimal digit
+
+    // An exponent requires at least one decimal digit
+    bool atLeastOneDigit = Json::isDecDigit(is->peek());
 
     while(is->hasNext() && Json::isDecDigit(is->peek())) {
         if(capture) currentVal += is->next();
