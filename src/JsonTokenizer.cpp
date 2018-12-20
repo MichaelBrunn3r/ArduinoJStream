@@ -48,9 +48,10 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             // Integers values are handled in special way, because they do not have a usefull prefix (like '"', '.' or 'e').
             // Calling 'is->next()' would unneccessarily complicate reading an Integer.
 
-            if (!readInt(buf != nullptr)) return Token::ERR;
+            bool isValid = readInt(buf != nullptr);
             if(buf != nullptr) *buf = currentVal;
-            return Token::INT;
+            if (!isValid) return Token::ERR;
+            else return Token::INT;
         }
 
         const char c = is->next();
@@ -142,29 +143,33 @@ void JsonTokenizer::skipWhitespace() const {
 }
 
 bool JsonTokenizer::readInt(bool capture) {
-    currentVal = "";
-    bool result = false;
+    currentVal = ""; // Reset the token value buffer
 
+    // Optional '-' prefix
     if(is->peek() == '-') {
         if(capture) currentVal += is->next();
         else is->next();
     }
 
-    // An integer starting with 0 cannot be followed by any digits
-    bool startsWithZero = false;
-    if(is->hasNext() && is->peek() == '0') { 
-        if(capture) currentVal += is->next();
-        else is->next();
-        startsWithZero = true;
-        result = true;
+    if(!hasNext()) {errorCode = ParseError::UNEXPECTED_EOS; return false;}
+
+    char firstDigit = 0; // First decimal digit
+    bool moreThanOneDigit = false; // Indicates if the Integer has more than one decimal digit
+
+    // Reads digits even if the Integer is malformed
+    while(is->hasNext() && Json::isDecDigit(is->peek())) {
+        char digit = is->next();
+        if(capture) currentVal += digit;
+
+        if(firstDigit == 0) firstDigit = digit;
+        else moreThanOneDigit = true;
     }
 
-    while(is->hasNext() && Json::isDecDigit(is->peek())) {
-        if(capture) currentVal += is->next();
-        else is->next();
-        result = !startsWithZero;
-    }
-    return result;
+    // An Integer has to have at least one digit and a starting 0 cannot be followed by a digit.
+    if(firstDigit == 0 || firstDigit == '0' && moreThanOneDigit) {
+        errorCode = ParseError::MALFORMED_INT; 
+        return false;
+    } else return true;
 }
 
 bool JsonTokenizer::readFrac(bool capture) {
