@@ -4,6 +4,7 @@
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <tuple>
 
 #include <Arduino.h>
 #include <JsonTokenizer.h>
@@ -14,10 +15,31 @@ std::ostream& operator << ( std::ostream& os, JsonTokenizer::Token const& value 
     return os;
 }
 
-void matchGeneratedTokens(JsonTokenizer* tok, String json, std::vector<JsonTokenizer::Token> tokens) {
+std::ostream& operator << ( std::ostream& os, JsonTokenizer::ParseError const& value ) {
+    os << JsonTokenizer::errorToStr(value);
+    return os;
+}
+
+void matchGeneratedTokens(JsonTokenizer* tok, String json, std::vector<std::pair<JsonTokenizer::Token, String>> tokens) {
     tok->tokenize(json);
     for(int k=0; k<tokens.size(); k++) {
-        REQUIRE(tok->next(nullptr) == tokens[k]);
+        String buf = "";
+        REQUIRE(tok->next(&buf) == tokens[k].first);
+        REQUIRE(buf == tokens[k].second);
+    }
+    REQUIRE_FALSE(tok->hasNext());
+}
+
+void matchGeneratedTokensAndErrors(JsonTokenizer* tok, String json, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>> tokens) {
+    tok->tokenize(json);
+    for(int k=0; k<tokens.size(); k++) {
+        String buf = "";
+        REQUIRE(tok->next(&buf) == std::get<0>(tokens[k]));
+        if(std::get<0>(tokens[k]) == JsonTokenizer::Token::ERR) {
+            REQUIRE(tok->getErrorCode() == std::get<1>(tokens[k]));
+        }
+
+        REQUIRE(buf == std::get<2>(tokens[k]));
     }
     REQUIRE_FALSE(tok->hasNext());
 }
@@ -36,24 +58,6 @@ static String jsonExample1 =
         \"true\": true, \
         \"null\": null \
     }";
-
-SCENARIO("Token Type to String") {
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::NaT)) == "NaT");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::OBJ_START)) == "{");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::OBJ_END)) == "}");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::ARR_START)) == "[");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::ARR_END)) == "]");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::COMMA)) == ",");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::INT)) == "INT");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::FRAC)) == "FRAC");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::EXP)) == "EXP");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::STR)) == "STR");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::FIELD_NAME)) == "FIELD_NAME");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::KW_NULL)) == "null");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::KW_TRUE)) == "true");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::KW_FALSE)) == "false");
-    REQUIRE(String(JsonTokenizer::tokenToStr(JsonTokenizer::Token::ERR)) == "ERR");
-}
 
 /**
  * Test if the Tokenizer tokenizes the basic building block Tokens (everything except a String, Field Name or a Number) correctly
@@ -77,38 +81,98 @@ SCENARIO("Tokenize basic Tokens") {
 
 SCENARIO("Tokenize numbers") {
     auto tok = JsonTokenizer();
-    GIVEN("valid numbers") {
-        std::vector<std::pair<String, std::vector<JsonTokenizer::Token>>> nums = {
-            {"0", {JsonTokenizer::Token::INT}},
-            {"-0", {JsonTokenizer::Token::INT}},
-            {"-97812467", {JsonTokenizer::Token::INT}},
-            {"123151", {JsonTokenizer::Token::INT}},
-            {".3123", {JsonTokenizer::Token::FRAC}},
-            {"0.0", {JsonTokenizer::Token::INT, JsonTokenizer::Token::FRAC}},
-            {"-1.321", {JsonTokenizer::Token::INT, JsonTokenizer::Token::FRAC}},
-            {"e4123", {JsonTokenizer::Token::EXP}},
-            {"E+352532", {JsonTokenizer::Token::EXP}},
-            {"E-6775456", {JsonTokenizer::Token::EXP}},
-            {"12e4234", {JsonTokenizer::Token::INT, JsonTokenizer::Token::EXP}},
-            {".642E+345", {JsonTokenizer::Token::FRAC, JsonTokenizer::Token::EXP}},
-            {"-0.123e-234", {JsonTokenizer::Token::INT, JsonTokenizer::Token::FRAC, JsonTokenizer::Token::EXP}}
+
+    // INTEGERS
+    GIVEN("valid integers") {
+        std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> ints = {
+            {"0", {{JsonTokenizer::Token::INT, "0"}}},
+            {"-0", {{JsonTokenizer::Token::INT, "-0"}}},
+            {"2834719075129051986198309182370", {{JsonTokenizer::Token::INT, "2834719075129051986198309182370"}}},
+            {"-4192359128129591469102380120350", {{JsonTokenizer::Token::INT, "-4192359128129591469102380120350"}}}
         };
-            
-        for(int i=0; i<nums.size(); i++) {
-            matchGeneratedTokens(&tok, nums[i].first, nums[i].second);
+
+        for(int i=0; i<ints.size(); i++) {
+            matchGeneratedTokens(&tok, ints[i].first, ints[i].second);
         }
     }
-    GIVEN("invalid numbers") {
-        std::vector<std::pair<String, std::vector<JsonTokenizer::Token>>> nums = {
-            {"-", {JsonTokenizer::Token::ERR}},
-            {"00", {JsonTokenizer::Token::ERR}},
-            {"014112", {JsonTokenizer::Token::ERR}},
-            {"-.12", {JsonTokenizer::Token::ERR, JsonTokenizer::Token::FRAC}},
-            {"-E-3423", {JsonTokenizer::Token::ERR, JsonTokenizer::Token::EXP}}
+    GIVEN("invalid integers") {
+        std::vector<std::pair<String, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>>>> ints = {
+            {"-", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, "-"}}},
+            {"0234", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_INT, "0234"}}},
+            {"-0234", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_INT, "-0234"}}}
         };
-            
-        for(int i=0; i<nums.size(); i++) {
-            matchGeneratedTokens(&tok, nums[i].first, nums[i].second);
+
+        for(int i=0; i<ints.size(); i++) {
+            matchGeneratedTokensAndErrors(&tok, ints[i].first, ints[i].second);
+        }
+    }
+
+    // FRACTIONS
+    GIVEN("valid fractions") {
+        std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> ints = {
+            {".0", {{JsonTokenizer::Token::FRAC, "0"}}},
+            {".6343", {{JsonTokenizer::Token::FRAC, "6343"}}},
+            {".0006343000", {{JsonTokenizer::Token::FRAC, "0006343000"}}}
+        };
+
+        for(int i=0; i<ints.size(); i++) {
+            matchGeneratedTokens(&tok, ints[i].first, ints[i].second);
+        }
+    }
+    GIVEN("invalid fractions") {
+        std::vector<std::pair<String, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>>>> ints = {
+            {".", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, ""}}},
+            {".a", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_FRAC, ""},
+                    {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_CHAR, "a"}}},
+            {".012.032", {{JsonTokenizer::Token::FRAC, JsonTokenizer::ParseError::NaE, "012"}, 
+                            {JsonTokenizer::Token::FRAC, JsonTokenizer::ParseError::NaE, "032"}}}
+        };
+
+        for(int i=0; i<ints.size(); i++) {
+            matchGeneratedTokensAndErrors(&tok, ints[i].first, ints[i].second);
+        }
+    }
+
+    // EXPONENTS
+    GIVEN("valid exponentes") {
+        std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> ints = {
+            {"e10", {{JsonTokenizer::Token::EXP, "10"}}},
+            {"e0", {{JsonTokenizer::Token::EXP, "0"}}},
+            {"e00001", {{JsonTokenizer::Token::EXP, "00001"}}},
+            {"E+311", {{JsonTokenizer::Token::EXP, "311"}}}
+        };
+
+        for(int i=0; i<ints.size(); i++) {
+            matchGeneratedTokens(&tok, ints[i].first, ints[i].second);
+        }
+    }
+    GIVEN("invalid exponents") {
+        std::vector<std::pair<String, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>>>> ints = {
+            {"e", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, ""}}},
+            {"E", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, ""}}},
+            {"e+", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, ""}}},
+            {"e-", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, "-"}}},
+            {"e--", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_EXP, "-"}, 
+                        {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, "-"}}},
+            {"e++", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_EXP, ""}, 
+                        {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_CHAR, "+"}}}
+        };
+
+        for(int i=0; i<ints.size(); i++) {
+            matchGeneratedTokensAndErrors(&tok, ints[i].first, ints[i].second);
+        }
+    }
+
+    // NUMBERS
+    GIVEN("valid numbers") {
+        std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> ints = {
+            {"0.1", {{JsonTokenizer::Token::INT, "0"}, {JsonTokenizer::Token::FRAC, "1"}}},
+            {"-0.1", {{JsonTokenizer::Token::INT, "-0"}, {JsonTokenizer::Token::FRAC, "1"}}},
+            {"-0.1", {{JsonTokenizer::Token::INT, "-0"}, {JsonTokenizer::Token::FRAC, "1"}}}
+        };
+
+        for(int i=0; i<ints.size(); i++) {
+            matchGeneratedTokens(&tok, ints[i].first, ints[i].second);
         }
     }
 }
