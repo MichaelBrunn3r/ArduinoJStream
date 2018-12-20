@@ -92,7 +92,7 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             else return Token::EXP;
         } else {
             errorCode = ParseError::UNEXPECTED_CHAR;
-            if(buf != nullptr) *buf = new char[1]{c};
+            if(buf != nullptr) *buf = new char[2]{c, '\0'};
             return Token::ERR;
         }
     }
