@@ -48,9 +48,7 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             // Integers values are handled in special way, because they do not have a usefull prefix (like '"', '.' or 'e').
             // Calling 'is->next()' would unneccessarily complicate reading an Integer.
 
-            bool isValid = readInt(buf != nullptr);
-            if(buf != nullptr) *buf = currentVal;
-            if (!isValid) return Token::ERR;
+            if (!readInt(buf)) return Token::ERR;
             else return Token::INT;
         }
 
@@ -62,8 +60,7 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
         else if(c == ',') return Token::COMMA;
         else if(c == '"') { 
             // Read String
-            if(!readStr(buf != nullptr)) return Token::ERR;
-            if(buf != nullptr) *buf = currentVal;
+            if(!readStr(buf)) return Token::ERR;
 
             // Test if the String is a field name
             skipWhitespace();
@@ -81,18 +78,14 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             if(!matchStr("ull", 3)) return Token::ERR;
             return Token::KW_NULL;
         } else if(c == '.') {
-            bool isValid = readFrac(buf != nullptr); 
-            if(buf != nullptr) *buf = currentVal;
-            if(!isValid) return Token::ERR;
+            if(!readFrac(buf)) return Token::ERR;
             else return Token::FRAC;
         } else if(c == 'e' || c == 'E') {
-            bool isValid = readExp(buf != nullptr);
-            if(buf != nullptr) *buf = currentVal;
-            if(!isValid) return Token::ERR;
+            if(!readExp(buf)) return Token::ERR;
             else return Token::EXP;
         } else {
             errorCode = ParseError::UNEXPECTED_CHAR;
-            if(buf != nullptr) *buf = new char[2]{c, '\0'};
+            if(buf != nullptr) *buf += c;
             return Token::ERR;
         }
     }
@@ -144,12 +137,10 @@ void JsonTokenizer::skipWhitespace() const {
     }
 }
 
-bool JsonTokenizer::readInt(bool capture) {
-    currentVal = ""; // Reset the token value buffer
-
+bool JsonTokenizer::readInt(String* buf) {
     // Optional '-' prefix
     if(is->peek() == '-') {
-        if(capture) currentVal += is->next();
+        if(buf != nullptr) *buf += is->next();
         else is->next();
     }
 
@@ -161,7 +152,7 @@ bool JsonTokenizer::readInt(bool capture) {
     // Reads digits even if the Integer is malformed
     while(is->hasNext() && Json::isDecDigit(is->peek())) {
         char digit = is->next();
-        if(capture) currentVal += digit;
+        if(buf != nullptr) *buf += digit;
 
         if(firstDigit == 0) firstDigit = digit;
         else moreThanOneDigit = true;
@@ -174,15 +165,14 @@ bool JsonTokenizer::readInt(bool capture) {
     } else return true;
 }
 
-bool JsonTokenizer::readFrac(bool capture) {
+bool JsonTokenizer::readFrac(String* buf) {
     if(!is->hasNext()) {errorCode = ParseError::UNEXPECTED_EOS; return false;}
-    currentVal = "";
-
+    
     // A fraction has to have at least one digit
     bool atLeastOneDigit = Json::isDecDigit(is->peek());
 
     while(is->hasNext() && Json::isDecDigit(is->peek())) {
-        if(capture) currentVal += is->next();
+        if(buf != nullptr) *buf += is->next();
         else is->next();       
     }
 
@@ -190,12 +180,10 @@ bool JsonTokenizer::readFrac(bool capture) {
     return atLeastOneDigit;
 }
 
-bool JsonTokenizer::readExp(bool capture) {
-    currentVal = "";
-
+bool JsonTokenizer::readExp(String* buf) {
     // Sign is optional
     if(is->hasNext() && is->peek() == '-') {
-        if(capture) currentVal += is->next();
+        if(buf != nullptr) *buf += is->next();
         else is->next();
     } else if(is->hasNext() && is->peek() == '+') is->next(); // '+' is redundant -> don't save
 
@@ -205,7 +193,7 @@ bool JsonTokenizer::readExp(bool capture) {
     bool atLeastOneDigit = Json::isDecDigit(is->peek());
 
     while(is->hasNext() && Json::isDecDigit(is->peek())) {
-        if(capture) currentVal += is->next();
+        if(buf != nullptr) *buf += is->next();
         else is->next();
     }
 
@@ -213,15 +201,13 @@ bool JsonTokenizer::readExp(bool capture) {
     return atLeastOneDigit;
 }
 
-bool JsonTokenizer::readStr(bool capture) {
-    currentVal = "";
-
+bool JsonTokenizer::readStr(String* buf) {
     while(is->hasNext()) {
         if(is->peek() == '\\') {
             is->next();
             if(!is->hasNext()) break; // Unterminated String. Break out of loop.
             else if(Json::isEscapeable(is->peek())) {
-                if(capture) currentVal += Json::escape(is->next());
+                if(buf != nullptr) *buf += Json::escape(is->next());
                 else is->next();
             } else {
                 errorCode = ParseError::UNESCAPEABLE_CHAR;
@@ -231,7 +217,7 @@ bool JsonTokenizer::readStr(bool capture) {
             is->next();
             return true;
         } else {
-            if(capture) currentVal += is->next();
+            if(buf != nullptr) *buf += is->next();
             else is->next();
         }
     }

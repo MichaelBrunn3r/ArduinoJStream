@@ -90,9 +90,9 @@ class JsonTokenizer {
         ParseError errorCode = ParseError::NaE;
 
         void skipWhitespace() const;
-        bool readInt(bool capture);
-        bool readFrac(bool capture);
-        bool readExp(bool capture);
-        bool readStr(bool capture);
+        bool readInt(String* buf);
+        bool readFrac(String* buf);
+        bool readExp(String* buf);
+        bool readStr(String* buf);
         bool matchStr(const char kw[], size_t length);
 };
