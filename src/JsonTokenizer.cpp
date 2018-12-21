@@ -22,6 +22,7 @@ bool JsonTokenizer::hasNext() {
 
 JsonTokenizer::Token JsonTokenizer::peek(String* buf) {
     if(currentToken == Token::NaT) {
+        currentVal = "";
         currentToken = next(&currentVal);
     }
 
