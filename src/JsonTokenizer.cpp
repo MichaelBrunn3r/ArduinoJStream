@@ -84,8 +84,18 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
             if(!readExp(buf)) return Token::ERR;
             else return Token::EXP;
         } else {
-            errorCode = ParseError::UNEXPECTED_CHAR;
+            // If the char is unexpexted, assume its an unquoted string
+            errorCode = ParseError::UNQUOTED_STR;
             if(buf != nullptr) *buf += c;
+
+            // Read the rest of the unquoted string
+            while(is->hasNext()) {
+                char c = is->peek();
+                if(c == ',' || c == ']' || c == '}') break; // chars that can terminate a json value
+
+                if(buf!= nullptr) *buf += c;
+                is->next();
+            }
             return Token::ERR;
         }
     }
@@ -117,13 +127,13 @@ const char* JsonTokenizer::tokenToStr(Token t) {
 const char* JsonTokenizer::errorToStr(ParseError e) {
     switch(e) {
         case ParseError::NaE: return "NaE";
-        case ParseError::UNTERMINATED_STR: return "UNTERMINATED_STR";
-        case ParseError::UNESCAPEABLE_CHAR: return "UNESCAPEABLE_CHAR";
         case ParseError::UNEXPECTED_EOS: return "UNEXPECTED_EOS"; 
-        case ParseError::UNEXPECTED_CHAR: return "UNEXPECTED_CHAR";
+        case ParseError::UNQUOTED_STR : return "UNQUOTED_STR";
         case ParseError::MALFORMED_INT: return "MALFORMED_INT";
         case ParseError::MALFORMED_FRAC: return "MALFORMED_FRAC";
         case ParseError::MALFORMED_EXP: return "MALFORMED_EXP";
+        case ParseError::UNESCAPEABLE_CHAR: return "UNESCAPEABLE_CHAR";
+        case ParseError::UNTERMINATED_STR: return "UNTERMINATED_STR";
     }
 }
 

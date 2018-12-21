@@ -31,8 +31,8 @@ class JsonTokenizer {
             NaE = 0, // Not an Error
             UNTERMINATED_STR, 
             UNESCAPEABLE_CHAR, 
-            UNEXPECTED_EOS, 
-            UNEXPECTED_CHAR,
+            UNEXPECTED_EOS,
+            UNQUOTED_STR,
             MALFORMED_INT,
             MALFORMED_FRAC,
             MALFORMED_EXP
