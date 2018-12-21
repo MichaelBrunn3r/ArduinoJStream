@@ -123,7 +123,7 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
         std::vector<std::pair<String, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>>>> fracs = {
             {".", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, ""}}},
             {".a", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_FRAC, ""},
-                    {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_CHAR, "a"}}},
+                    {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "a"}}},
             {".012.032", {{JsonTokenizer::Token::FRAC, JsonTokenizer::ParseError::NaE, "012"}, 
                             {JsonTokenizer::Token::FRAC, JsonTokenizer::ParseError::NaE, "032"}}}
         };
@@ -155,7 +155,7 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
             {"e--", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_EXP, "-"}, 
                         {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, "-"}}},
             {"e++", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_EXP, ""}, 
-                        {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_CHAR, "+"}}}
+                        {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "+"}}}
         };
 
         for(int i=0; i<exps.size(); i++) {
@@ -189,6 +189,45 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
 
         for(int i=0; i<nums.size(); i++) {
             matchGeneratedTokensAndErrors(&tok, nums[i].first, nums[i].second);
+        }
+    }
+}
+
+SCENARIO("Tokenize strings", "[tokenize]") {
+    auto tok = JsonTokenizer();
+    GIVEN("valid strings") {
+        std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> strs = {
+            {"\"\"", {{JsonTokenizer::Token::STR, ""}}},
+            {"\"\\\"\"", {{JsonTokenizer::Token::STR, "\""}}}, // Escape '"'
+            {"\"\\n\"", {{JsonTokenizer::Token::STR, "\n"}}},  // Escape '\n'
+            {"\"\\t\"", {{JsonTokenizer::Token::STR, "\t"}}},  // Escape '\t'
+            {"\"\\r\"", {{JsonTokenizer::Token::STR, "\r"}}},  // Escape '\r'
+            {"\"\\b\"", {{JsonTokenizer::Token::STR, "\b"}}},  // Escape '\b'
+            {"\"\\f\"", {{JsonTokenizer::Token::STR, "\f"}}},  // Escape '\f'
+            {"\"\\\\\"", {{JsonTokenizer::Token::STR, "\\"}}}  // Escape '\'
+        };
+
+        for(int i=0; i<strs.size(); i++) {
+            matchGeneratedTokens(&tok, strs[i].first, strs[i].second);
+        }
+    }
+    GIVEN("invalid strings") {
+        std::vector<std::pair<String, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>>>> strs = {
+            {"\"", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNTERMINATED_STR, ""}}},
+            {"\"a string", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNTERMINATED_STR, "a string"}}},
+            {"a string\"", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "a string\""}}},
+            {"a string", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "a string"}}},
+            {"[\"abc\", def\", \"ghi\"]", {{JsonTokenizer::Token::ARR_START, JsonTokenizer::ParseError::NaE, ""},
+                                    {JsonTokenizer::Token::STR, JsonTokenizer::ParseError::NaE, "abc"},
+                                    {JsonTokenizer::Token::COMMA, JsonTokenizer::ParseError::NaE, ""},
+                                    {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "def\""},
+                                    {JsonTokenizer::Token::COMMA, JsonTokenizer::ParseError::NaE, ""},
+                                    {JsonTokenizer::Token::STR, JsonTokenizer::ParseError::NaE, "ghi"},
+                                    {JsonTokenizer::Token::ARR_END, JsonTokenizer::ParseError::NaE, ""}}}
+        };
+
+        for(int i=0; i<strs.size(); i++) {
+            matchGeneratedTokensAndErrors(&tok, strs[i].first, strs[i].second);
         }
     }
 }
