@@ -1,14 +1,11 @@
 #pragma once
 
-#include <Arduino.h>
 #include <WString.h>
-#include <Stream.h>
 #include <Streams/InputStream.h>
-#include <WString.h>
 
 class JsonTokenizer {
     public:
-        enum class Token : byte {
+        enum class Token : uint8_t {
             NaT = 0, // Not a Token
             OBJ_START, 
             OBJ_END, 
@@ -27,7 +24,7 @@ class JsonTokenizer {
         };
         static const char* tokenToStr(Token t);
 
-        enum class ParseError : byte {
+        enum class ParseError : uint8_t {
             NaE = 0, // Not an Error
             UNTERMINATED_STR, 
             UNESCAPEABLE_CHAR, 
