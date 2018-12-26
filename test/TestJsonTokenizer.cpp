@@ -85,10 +85,10 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
     // INTEGERS
     GIVEN("valid integers") {
         std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> ints = {
-            {"0", {{JsonTokenizer::Token::INT, "0"}}},
-            {"-0", {{JsonTokenizer::Token::INT, "-0"}}},
-            {"2834719075129051986198309182370", {{JsonTokenizer::Token::INT, "2834719075129051986198309182370"}}},
-            {"-4192359128129591469102380120350", {{JsonTokenizer::Token::INT, "-4192359128129591469102380120350"}}}
+            {"0", {{JsonTokenizer::Token::NUM, "0"}}},
+            {"-0", {{JsonTokenizer::Token::NUM, "-0"}}},
+            {"2834719075129051986198309182370", {{JsonTokenizer::Token::NUM, "2834719075129051986198309182370"}}},
+            {"-4192359128129591469102380120350", {{JsonTokenizer::Token::NUM, "-4192359128129591469102380120350"}}}
         };
 
         for(int i=0; i<ints.size(); i++) {
@@ -97,9 +97,9 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
     }
     GIVEN("invalid integers") {
         std::vector<std::pair<String, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>>>> ints = {
-            {"-", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, "-"}}},
-            {"0234", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_INT, "0234"}}},
-            {"-0234", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_INT, "-0234"}}}
+            {"-", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "-"}}},
+            {"0234", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0234"}}},
+            {"-0234", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "-0234"}}}
         };
 
         for(int i=0; i<ints.size(); i++) {
@@ -108,24 +108,23 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
     }
 
     // FRACTIONS
-    GIVEN("valid fractions") {
+    GIVEN("valid decimals") {
         std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> ints = {
-            {".0", {{JsonTokenizer::Token::FRAC, "0"}}},
-            {".6343", {{JsonTokenizer::Token::FRAC, "6343"}}},
-            {".0006343000", {{JsonTokenizer::Token::FRAC, "0006343000"}}}
+            {"0.0", {{JsonTokenizer::Token::NUM, "0.0"}}},
+            {"0.6343", {{JsonTokenizer::Token::NUM, "0.6343"}}},
+            {"0.0006343000", {{JsonTokenizer::Token::NUM, "0.0006343000"}}}
         };
 
         for(int i=0; i<ints.size(); i++) {
             matchGeneratedTokens(&tok, ints[i].first, ints[i].second);
         }
     }
-    GIVEN("invalid fractions") {
+    GIVEN("invalid decimals") {
         std::vector<std::pair<String, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>>>> fracs = {
-            {".", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, ""}}},
-            {".a", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_FRAC, ""},
+            {".", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "."}}},
+            {"0.a", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0."}, 
                     {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "a"}}},
-            {".012.032", {{JsonTokenizer::Token::FRAC, JsonTokenizer::ParseError::NaE, "012"}, 
-                            {JsonTokenizer::Token::FRAC, JsonTokenizer::ParseError::NaE, "032"}}}
+            {"0.012.032", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0.012.032"}}}
         };
 
         for(int i=0; i<fracs.size(); i++) {
@@ -136,10 +135,10 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
     // EXPONENTS
     GIVEN("valid exponentes") {
         std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> exps = {
-            {"e10", {{JsonTokenizer::Token::EXP, "10"}}},
-            {"e0", {{JsonTokenizer::Token::EXP, "0"}}},
-            {"e00001", {{JsonTokenizer::Token::EXP, "00001"}}},
-            {"E+311", {{JsonTokenizer::Token::EXP, "311"}}}
+            {"0e10", {{JsonTokenizer::Token::NUM, "0e10"}}},
+            {"0e0", {{JsonTokenizer::Token::NUM, "0e0"}}},
+            {"0e00001", {{JsonTokenizer::Token::NUM, "0e00001"}}},
+            {"0E+311", {{JsonTokenizer::Token::NUM, "0E+311"}}}
         };
 
         for(int i=0; i<exps.size(); i++) {
@@ -148,14 +147,12 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
     }
     GIVEN("invalid exponents") {
         std::vector<std::pair<String, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>>>> exps = {
-            {"e", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, ""}}},
-            {"E", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, ""}}},
-            {"e+", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, ""}}},
-            {"e-", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, "-"}}},
-            {"e--", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_EXP, "-"}, 
-                        {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNEXPECTED_EOS, "-"}}},
-            {"e++", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_EXP, ""}, 
-                        {JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "+"}}}
+            {"e", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "e"}}},
+            {"E", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::UNQUOTED_STR, "E"}}},
+            {"0e+", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0e+"}}},
+            {"0e-", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0e-"}}},
+            {"0e--", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0e--"}}},
+            {"0e++", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0e++"}}}
         };
 
         for(int i=0; i<exps.size(); i++) {
@@ -166,11 +163,11 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
     // NUMBERS
     GIVEN("valid numbers") {
         std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> nums = {
-            {"0.1", {{JsonTokenizer::Token::INT, "0"}, {JsonTokenizer::Token::FRAC, "1"}}},
-            {"-0.1", {{JsonTokenizer::Token::INT, "-0"}, {JsonTokenizer::Token::FRAC, "1"}}},
-            {"-0.1", {{JsonTokenizer::Token::INT, "-0"}, {JsonTokenizer::Token::FRAC, "1"}}},
-            {"0e10", {{JsonTokenizer::Token::INT, "0"}, {JsonTokenizer::Token::EXP, "10"}}},
-            {"-0.1E+32", {{JsonTokenizer::Token::INT, "-0"}, {JsonTokenizer::Token::FRAC, "1"}, {JsonTokenizer::Token::EXP, "32"}}}
+            {"0.1", {{JsonTokenizer::Token::NUM, "0.1"}}},
+            {"-0.1", {{JsonTokenizer::Token::NUM, "-0.1"}}},
+            {"-0.1", {{JsonTokenizer::Token::NUM, "-0.1"}}},
+            {"0e10", {{JsonTokenizer::Token::NUM, "0e10"}}},
+            {"-0.1E+32", {{JsonTokenizer::Token::NUM, "-0.1E+32"}}}
         };
 
         for(int i=0; i<nums.size(); i++) {
@@ -179,12 +176,8 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
     }
     GIVEN("invalid numbers") {
         std::vector<std::pair<String, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>>>> nums = {
-            {"0.1.10", {{JsonTokenizer::Token::INT, JsonTokenizer::ParseError::NaE, "0"},
-                        {JsonTokenizer::Token::FRAC, JsonTokenizer::ParseError::NaE, "1"},
-                        {JsonTokenizer::Token::FRAC, JsonTokenizer::ParseError::NaE, "10"}}},
-            {"0e-12e+2", {{JsonTokenizer::Token::INT, JsonTokenizer::ParseError::NaE, "0"},
-                            {JsonTokenizer::Token::EXP, JsonTokenizer::ParseError::NaE, "-12"},
-                            {JsonTokenizer::Token::EXP, JsonTokenizer::ParseError::NaE, "2"}}}
+            {"0.1.10", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0.1.10"}}},
+            {"0e-12e+2", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0e-12e+2"}}}
         };
 
         for(int i=0; i<nums.size(); i++) {
