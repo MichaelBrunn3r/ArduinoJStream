@@ -46,11 +46,11 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
 
         // Check if the character is the start of a number
         if(Json::isDecDigit(is->peek()) || is->peek() == '-') {
-            // Integers values are handled in special way, because they do not have a usefull prefix (like '"', '.' or 'e').
+            // Numbers are handled in special way, because they do not have a usefull prefix.
             // Calling 'is->next()' would unneccessarily complicate reading an Integer.
 
-            if (!readInt(buf)) return Token::ERR;
-            else return Token::INT;
+            if (!readNum(buf)) return Token::ERR;
+            else return Token::NUM;
         }
 
         const char c = is->next();
@@ -78,12 +78,6 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
         } else if(c == 'n') {
             if(!matchStr("ull", 3)) return Token::ERR;
             return Token::KW_NULL;
-        } else if(c == '.') {
-            if(!readFrac(buf)) return Token::ERR;
-            else return Token::FRAC;
-        } else if(c == 'e' || c == 'E') {
-            if(!readExp(buf)) return Token::ERR;
-            else return Token::EXP;
         } else {
             // If the char is unexpexted, assume its an unquoted string
             errorCode = ParseError::UNQUOTED_STR;
@@ -113,10 +107,7 @@ const char* JsonTokenizer::tokenToStr(Token t) {
         case Token::ARR_START: return "[";
         case Token::ARR_END: return "]";
         case Token::COMMA: return ",";
-        case Token::INT: return "INT";
-        case Token::FRAC: return "FRAC";
-        case Token::EXP: return "EXP";
-        case Token::STR: return "STR";
+        case Token::NUM: return "NUM";
         case Token::FIELD_NAME: return "FIELD_NAME";
         case Token::KW_NULL: return "null";
         case Token::KW_TRUE: return "true";
@@ -130,9 +121,7 @@ const char* JsonTokenizer::errorToStr(ParseError e) {
         case ParseError::NaE: return "NaE";
         case ParseError::UNEXPECTED_EOS: return "UNEXPECTED_EOS"; 
         case ParseError::UNQUOTED_STR : return "UNQUOTED_STR";
-        case ParseError::MALFORMED_INT: return "MALFORMED_INT";
-        case ParseError::MALFORMED_FRAC: return "MALFORMED_FRAC";
-        case ParseError::MALFORMED_EXP: return "MALFORMED_EXP";
+        case ParseError::MALFORMED_NUM: return "MALFORMED_NUM";
         case ParseError::UNESCAPEABLE_CHAR: return "UNESCAPEABLE_CHAR";
         case ParseError::UNTERMINATED_STR: return "UNTERMINATED_STR";
     }
@@ -148,6 +137,44 @@ void JsonTokenizer::skipWhitespace() const {
     }
 }
 
+bool JsonTokenizer::readNum(String* buf) {
+    bool isValid = true;
+
+    // Read the integer
+    isValid = readInt(buf);
+
+    // Read the fraction if the number so far is valid
+    if(isValid && is->hasNext() && is->peek() == '.') {
+        if(buf != nullptr) *buf += is->next();
+        isValid = readFrac(buf);
+    }
+
+    // Read the exponent if the number so far is valid
+    if(isValid && is->hasNext() && (is->peek() == 'e' || is->peek() == 'E')){
+        if(buf != nullptr) *buf += is->next();
+        isValid = readExp(buf);
+    }
+
+    // If the next char is a valid number digit, the above code failed to capture it
+    // or (if its one of '.', 'e' or 'E') the number has a fraction/exponent at the wrong 
+    // position and is thus malformed (e.g. '10.0e-12.12': Only '10.0e-12' would be captured,
+    // but the trailing '.12' makes the number malformed). 
+    if(is->hasNext() && Json::isNumDigit(is->peek())) {
+        isValid = false;
+        errorCode = ParseError::MALFORMED_NUM;
+    } 
+
+    // If the number is not valid, capture the trailing erroneous digits 
+    // (e.g. '12..0012': 'readFrac(...)' returs false, but only '12.' is 
+    // captured up to this point. The trailing '.0012' is then captured for better error reporting).
+    if(!isValid) {
+        while(is->hasNext() && Json::isNumDigit(is->peek())) if(buf != nullptr) *buf += is->next();
+        return false;
+    }
+
+    return isValid;
+}
+
 bool JsonTokenizer::readInt(String* buf) {
     // Optional '-' prefix
     if(is->peek() == '-') {
@@ -155,7 +182,7 @@ bool JsonTokenizer::readInt(String* buf) {
         else is->next();
     }
 
-    if(!hasNext()) {errorCode = ParseError::UNEXPECTED_EOS; return false;}
+    if(!hasNext()) {errorCode = ParseError::MALFORMED_NUM; return false;}
 
     char firstDigit = 0; // First decimal digit
     bool moreThanOneDigit = false; // Indicates if the Integer has more than one decimal digit
@@ -171,13 +198,13 @@ bool JsonTokenizer::readInt(String* buf) {
 
     // An Integer has to have at least one digit and a starting 0 cannot be followed by a digit.
     if(firstDigit == 0 || firstDigit == '0' && moreThanOneDigit) {
-        errorCode = ParseError::MALFORMED_INT; 
+        errorCode = ParseError::MALFORMED_NUM; 
         return false;
     } else return true;
 }
 
 bool JsonTokenizer::readFrac(String* buf) {
-    if(!is->hasNext()) {errorCode = ParseError::UNEXPECTED_EOS; return false;}
+    if(!is->hasNext()) {errorCode = ParseError::MALFORMED_NUM; return false;}
     
     // A fraction has to have at least one digit
     bool atLeastOneDigit = Json::isDecDigit(is->peek());
@@ -187,18 +214,18 @@ bool JsonTokenizer::readFrac(String* buf) {
         else is->next();       
     }
 
-    if(!atLeastOneDigit) errorCode = ParseError::MALFORMED_FRAC;
+    if(!atLeastOneDigit) errorCode = ParseError::MALFORMED_NUM;
     return atLeastOneDigit;
 }
 
 bool JsonTokenizer::readExp(String* buf) {
     // Sign is optional
-    if(is->hasNext() && is->peek() == '-') {
+    if(is->hasNext() && (is->peek() == '-' || is->peek() == '+')) {
         if(buf != nullptr) *buf += is->next();
         else is->next();
-    } else if(is->hasNext() && is->peek() == '+') is->next(); // '+' is redundant -> don't save
+    }
 
-    if(!is->hasNext()) {errorCode = ParseError::UNEXPECTED_EOS; return false;} // An exponent requires at least one decimal digit
+    if(!is->hasNext()) {errorCode = ParseError::MALFORMED_NUM; return false;} // An exponent requires at least one decimal digit
 
     // An exponent requires at least one decimal digit
     bool atLeastOneDigit = Json::isDecDigit(is->peek());
@@ -208,7 +235,7 @@ bool JsonTokenizer::readExp(String* buf) {
         else is->next();
     }
 
-    if(!atLeastOneDigit) errorCode = ParseError::MALFORMED_EXP;
+    if(!atLeastOneDigit) errorCode = ParseError::MALFORMED_NUM;
     return atLeastOneDigit;
 }
 

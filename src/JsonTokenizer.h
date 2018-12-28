@@ -14,9 +14,7 @@ class JsonTokenizer {
             COMMA, 
             STR, 
             FIELD_NAME,
-            INT, 
-            FRAC, 
-            EXP,
+            NUM,
             KW_NULL, 
             KW_TRUE, 
             KW_FALSE, 
@@ -30,9 +28,7 @@ class JsonTokenizer {
             UNESCAPEABLE_CHAR, 
             UNEXPECTED_EOS,
             UNQUOTED_STR,
-            MALFORMED_INT,
-            MALFORMED_FRAC,
-            MALFORMED_EXP
+            MALFORMED_NUM
         };
         static const char* errorToStr(ParseError e);
 
@@ -87,6 +83,7 @@ class JsonTokenizer {
         ParseError errorCode = ParseError::NaE;
 
         void skipWhitespace() const;
+        bool readNum(String* buf);
         bool readInt(String* buf);
         bool readFrac(String* buf);
         bool readExp(String* buf);
