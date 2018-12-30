@@ -47,7 +47,7 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
         // Check if the character is the start of a number
         if(Json::isDecDigit(is->peek()) || is->peek() == '-') {
             // Numbers are handled in special way, because they do not have a usefull prefix.
-            // Calling 'is->next()' would unneccessarily complicate reading an Integer.
+            // Calling 'is->next()' would unneccessarily complicate reading a Number.
 
             if (!readNum(buf)) return Token::ERR;
             else return Token::NUM;
@@ -138,105 +138,59 @@ void JsonTokenizer::skipWhitespace() const {
 }
 
 bool JsonTokenizer::readNum(String* buf) {
-    bool isValid = true;
+    enum FSM_State : uint8_t {
+        // Accepting States
+        INT = 0, SD_INT = 1, DECIMAL = 2, EXP = 3,
 
-    // Read the integer
-    isValid = readInt(buf);
+        // Non-Accepting States
+        START, INT_SIGN, PERIOD, EXP_PREF, EXP_SIGN, ERROR
+    };
+    #define isAcceptingState(x) (x <= 3)
+    uint8_t state = START;
 
-    // Read the fraction if the number so far is valid
-    if(isValid && is->hasNext() && is->peek() == '.') {
-        if(buf != nullptr) *buf += is->next();
-        isValid = readFrac(buf);
+    while(is->hasNext()) {
+        char c = is->peek();
+        
+        // State Machine Transitions sorted by their conditional char
+        if(Json::isOneNine(c)) {
+            if(state == FSM_State::START || state == FSM_State::INT_SIGN) state = FSM_State::INT;
+            else if(state == FSM_State::PERIOD) state = FSM_State::DECIMAL;
+            else if(state == FSM_State::EXP_PREF || state == FSM_State::EXP_SIGN) state = FSM_State::EXP;
+            else state = FSM_State::ERROR;
+        } else if(c == '-') {
+            if(state == FSM_State::START) state = FSM_State::INT_SIGN;
+            else if(state == FSM_State::EXP_PREF) state = FSM_State::EXP_SIGN;
+            else state = FSM_State::ERROR;
+        } else if(c == '0') {
+            if(state == FSM_State::START || state == FSM_State::INT_SIGN) state = FSM_State::SD_INT;
+            else if(state == FSM_State::PERIOD) state = FSM_State::DECIMAL;
+            else if(state == FSM_State::EXP_PREF || state == FSM_State::EXP_SIGN) state = FSM_State::EXP;
+            else state = FSM_State::ERROR; 
+        } else if(c == '.') {
+            if(state == FSM_State::INT || state == FSM_State::SD_INT) state = FSM_State::PERIOD;
+            else state = FSM_State::ERROR;
+        } else if(c == 'e' || c == 'E') {
+            if(state == FSM_State::INT || state == FSM_State::SD_INT || state == FSM_State::DECIMAL) state = FSM_State::EXP_PREF;
+            else state = FSM_State::ERROR;
+        } else if(c == '+') {
+            if(state == FSM_State::EXP_PREF) state = FSM_State::EXP_SIGN;
+            else state = FSM_State::ERROR;
+        } else state = FSM_State::ERROR;
+
+        if(state == FSM_State::ERROR) break;
+
+        if(state == FSM_State::INT || state == FSM_State::DECIMAL || state == FSM_State::EXP) {
+            while(is->hasNext() && Json::isDecDigit(is->peek())) if(buf != nullptr) *buf += is->next();
+        } else if(buf != nullptr) *buf += is->next();        
     }
 
-    // Read the exponent if the number so far is valid
-    if(isValid && is->hasNext() && (is->peek() == 'e' || is->peek() == 'E')){
-        if(buf != nullptr) *buf += is->next();
-        isValid = readExp(buf);
-    }
-
-    // If the next char is a valid number digit, the above code failed to capture it
-    // or (if its one of '.', 'e' or 'E') the number has a fraction/exponent at the wrong 
-    // position and is thus malformed (e.g. '10.0e-12.12': Only '10.0e-12' would be captured,
-    // but the trailing '.12' makes the number malformed). 
-    if(is->hasNext() && Json::isNumDigit(is->peek())) {
-        isValid = false;
+    if(!isAcceptingState(state)) {
         errorCode = ParseError::MALFORMED_NUM;
-    } 
-
-    // If the number is not valid, capture the trailing erroneous digits 
-    // (e.g. '12..0012': 'readFrac(...)' returs false, but only '12.' is 
-    // captured up to this point. The trailing '.0012' is then captured for better error reporting).
-    if(!isValid) {
         while(is->hasNext() && Json::isNumDigit(is->peek())) if(buf != nullptr) *buf += is->next();
         return false;
-    }
-
-    return isValid;
-}
-
-bool JsonTokenizer::readInt(String* buf) {
-    // Optional '-' prefix
-    if(is->peek() == '-') {
-        if(buf != nullptr) *buf += is->next();
-        else is->next();
-    }
-
-    if(!hasNext()) {errorCode = ParseError::MALFORMED_NUM; return false;}
-
-    char firstDigit = 0; // First decimal digit
-    bool moreThanOneDigit = false; // Indicates if the Integer has more than one decimal digit
-
-    // Reads digits even if the Integer is malformed
-    while(is->hasNext() && Json::isDecDigit(is->peek())) {
-        char digit = is->next();
-        if(buf != nullptr) *buf += digit;
-
-        if(firstDigit == 0) firstDigit = digit;
-        else moreThanOneDigit = true;
-    }
-
-    // An Integer has to have at least one digit and a starting 0 cannot be followed by a digit.
-    if(firstDigit == 0 || firstDigit == '0' && moreThanOneDigit) {
-        errorCode = ParseError::MALFORMED_NUM; 
-        return false;
     } else return true;
-}
 
-bool JsonTokenizer::readFrac(String* buf) {
-    if(!is->hasNext()) {errorCode = ParseError::MALFORMED_NUM; return false;}
-    
-    // A fraction has to have at least one digit
-    bool atLeastOneDigit = Json::isDecDigit(is->peek());
-
-    while(is->hasNext() && Json::isDecDigit(is->peek())) {
-        if(buf != nullptr) *buf += is->next();
-        else is->next();       
-    }
-
-    if(!atLeastOneDigit) errorCode = ParseError::MALFORMED_NUM;
-    return atLeastOneDigit;
-}
-
-bool JsonTokenizer::readExp(String* buf) {
-    // Sign is optional
-    if(is->hasNext() && (is->peek() == '-' || is->peek() == '+')) {
-        if(buf != nullptr) *buf += is->next();
-        else is->next();
-    }
-
-    if(!is->hasNext()) {errorCode = ParseError::MALFORMED_NUM; return false;} // An exponent requires at least one decimal digit
-
-    // An exponent requires at least one decimal digit
-    bool atLeastOneDigit = Json::isDecDigit(is->peek());
-
-    while(is->hasNext() && Json::isDecDigit(is->peek())) {
-        if(buf != nullptr) *buf += is->next();
-        else is->next();
-    }
-
-    if(!atLeastOneDigit) errorCode = ParseError::MALFORMED_NUM;
-    return atLeastOneDigit;
+    #undef isAcceptingState
 }
 
 bool JsonTokenizer::readStr(String* buf) {
