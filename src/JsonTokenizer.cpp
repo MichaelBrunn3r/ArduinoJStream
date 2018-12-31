@@ -138,42 +138,52 @@ void JsonTokenizer::skipWhitespace() const {
 }
 
 bool JsonTokenizer::readNum(String* buf) {
+    /**
+     * Final State Machine for validating Json numbers.
+     * 
+     *      |  START  | INT_SIGN |  [ZERO]  | [INT] | PERIOD | [DECIMAL] |    E     | EXP_SIGN | [EXP]
+     * -----|---------|----------|----------|-------|--------|-----------|----------|----------|-------
+     * 1..9 |  INT    |   INT    |    -     |  INT  | DECIMAL|  DECIMAL  |   EXP    |   EXP    |  EXP
+     *   0  |  ZERO   |   ZERO   |    -     |  INT  | DECIMAL|  DECIMAL  |   EXP    |   EXP    |  EXP
+     *   -  | INT_SIGN|    -     |    -     |   -   |   -    |     -     | EXP_SING |    -     |   -
+     *   +  |    -    |    -     |    -     |   -   |   -    |     -     | EXP_SING |    -     |   -
+     *   .  |    -    |    -     |  PERIOD  | PERIOD|   -    |     -     |    -     |    -     |   -
+     *  e/E |    -    |    -     |    E     |   -   |   -    |     E     |    -     |    -     |   -
+     * 
+     * [...] - Accepting state
+    **/
+
     enum FSM_State : uint8_t {
         // Accepting States
-        INT = 0, SD_INT = 1, DECIMAL = 2, EXP = 3,
+        INT = 0, ZERO = 1, DECIMAL = 2, EXP = 3,
 
         // Non-Accepting States
-        START, INT_SIGN, PERIOD, EXP_PREF, EXP_SIGN, ERROR
+        START, INT_SIGN, PERIOD, E, EXP_SIGN, ERROR
     };
     #define isAcceptingState(x) (x <= 3)
-    uint8_t state = START;
+    FSM_State state = FSM_State::START;
 
     while(is->hasNext()) {
         char c = is->peek();
         
         // State Machine Transitions sorted by their conditional char
-        if(Json::isOneNine(c)) {
-            if(state == FSM_State::START || state == FSM_State::INT_SIGN) state = FSM_State::INT;
+        if(Json::isDecDigit(c)) {
+            if(state == FSM_State::START || state == FSM_State::INT_SIGN) state = c == '0' ? FSM_State::ZERO : FSM_State::INT;
             else if(state == FSM_State::PERIOD) state = FSM_State::DECIMAL;
-            else if(state == FSM_State::EXP_PREF || state == FSM_State::EXP_SIGN) state = FSM_State::EXP;
+            else if(state == FSM_State::E || state == FSM_State::EXP_SIGN) state = FSM_State::EXP;
             else state = FSM_State::ERROR;
         } else if(c == '-') {
             if(state == FSM_State::START) state = FSM_State::INT_SIGN;
-            else if(state == FSM_State::EXP_PREF) state = FSM_State::EXP_SIGN;
+            else if(state == FSM_State::E) state = FSM_State::EXP_SIGN;
             else state = FSM_State::ERROR;
-        } else if(c == '0') {
-            if(state == FSM_State::START || state == FSM_State::INT_SIGN) state = FSM_State::SD_INT;
-            else if(state == FSM_State::PERIOD) state = FSM_State::DECIMAL;
-            else if(state == FSM_State::EXP_PREF || state == FSM_State::EXP_SIGN) state = FSM_State::EXP;
-            else state = FSM_State::ERROR; 
         } else if(c == '.') {
-            if(state == FSM_State::INT || state == FSM_State::SD_INT) state = FSM_State::PERIOD;
+            if(state == FSM_State::INT || state == FSM_State::ZERO) state = FSM_State::PERIOD;
             else state = FSM_State::ERROR;
         } else if(c == 'e' || c == 'E') {
-            if(state == FSM_State::INT || state == FSM_State::SD_INT || state == FSM_State::DECIMAL) state = FSM_State::EXP_PREF;
+            if(state == FSM_State::INT || state == FSM_State::ZERO || state == FSM_State::DECIMAL) state = FSM_State::E;
             else state = FSM_State::ERROR;
         } else if(c == '+') {
-            if(state == FSM_State::EXP_PREF) state = FSM_State::EXP_SIGN;
+            if(state == FSM_State::E) state = FSM_State::EXP_SIGN;
             else state = FSM_State::ERROR;
         } else state = FSM_State::ERROR;
 
