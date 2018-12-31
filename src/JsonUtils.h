@@ -11,6 +11,11 @@ namespace Json {
         return c >= 48 && c <= 57;
     }
 
+    /** @brief Returns true if a character is a valid json decimal digit between (inclusive) 1 and 9 **/
+    bool isOneNine(const char c) {
+        return c >= 49 && c <= 57;
+    }
+
     /** @brief Returns true if a character is a valid json hexadecimal digit **/
     bool isHexDigit(const char c) {
         //     0-9                 A-F                   a-f
