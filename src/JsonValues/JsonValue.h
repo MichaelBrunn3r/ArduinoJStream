@@ -5,6 +5,7 @@
 #include <vector>
 
 namespace Json {
+    
     class JsonValue {
         public:
             enum class Type : uint8_t {OBJ, ARR, NUM, STR, KW_TRUE, KW_FALSE, KW_NULL};
