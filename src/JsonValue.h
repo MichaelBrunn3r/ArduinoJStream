@@ -9,9 +9,13 @@ namespace Json {
         public:
             enum class Type : uint8_t {OBJ, ARR, NUM, STR, KW_TRUE, KW_FALSE, KW_NULL};
 
-            JsonValue(Type type);
+            JsonValue(Type t);
             virtual const char* toString() {}
 
             Type type;
+            static const JsonValue* KW_TRUE; 
+            static const JsonValue* KW_FALSE; 
+            static const JsonValue* KW_NULL; 
     };
+
 }
