@@ -2,6 +2,8 @@
 
 namespace Json {
 
+    JsonObject::JsonObject() : JsonValue(JsonValue::Type::OBJ) {}
+
     const char* JsonObject::toJsonString() {
         String buf = "{";
         for(std::map<const char*, JsonValue*>::iterator it=pairs.begin(); it!=pairs.end(); it++) {

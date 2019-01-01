@@ -12,7 +12,7 @@ namespace Json {
             JsonValue(Type t);
             virtual const char* toJsonString() {}
 
-            Type type;
+            const Type type;
             static const JsonValue* KW_TRUE; 
             static const JsonValue* KW_FALSE; 
             static const JsonValue* KW_NULL; 
