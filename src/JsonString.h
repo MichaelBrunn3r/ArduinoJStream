@@ -8,7 +8,7 @@ namespace Json {
         public:
             JsonString(const char* str);
             JsonString(String str);
-            const char* toString();
+            const char* toJsonString() override;
 
         private:
             String val;

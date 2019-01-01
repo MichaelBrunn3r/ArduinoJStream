@@ -7,7 +7,7 @@ namespace Json {
     class JsonArray : public JsonValue {
         public:
             JsonArray();
-            const char* toString() override;
+            const char* toJsonString() override;
 
         private:
             std::vector<JsonValue*> vals;

@@ -10,7 +10,7 @@ namespace Json {
         this->type = type;
     }
 
-    const char* JsonValue::toString() {
+    const char* JsonValue::toJsonString() {
         switch(type) {
             case Type::KW_TRUE: return "true";
             case Type::KW_FALSE: return "false";

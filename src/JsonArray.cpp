@@ -2,11 +2,11 @@
 
 namespace Json {
 
-    const char* JsonArray::toString() {
+    const char* JsonArray::toJsonString() {
         String buf = "[";
         for(std::vector<JsonValue*>::iterator it=vals.begin(); it!=vals.end(); it++) {
             if(it != vals.begin()) buf += ',';
-            buf += (*it)->toString();
+            buf += (*it)->toJsonString();
         }
         buf += ']';
     }

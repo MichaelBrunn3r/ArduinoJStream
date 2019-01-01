@@ -7,7 +7,7 @@ namespace Json {
     class JsonObject : public JsonValue {
         public:
             JsonObject();
-            const char* toString() override;
+            const char* toJsonString() override;
         
         private:
             std::map<const char*, JsonValue*> pairs;

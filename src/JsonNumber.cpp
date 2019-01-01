@@ -2,7 +2,7 @@
 
 namespace Json {
 
-    const char* JsonNumber::toString() {
+    const char* JsonNumber::toJsonString() {
         return val.c_str();
     }
 

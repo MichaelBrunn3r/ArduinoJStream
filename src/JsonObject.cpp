@@ -2,12 +2,12 @@
 
 namespace Json {
 
-    const char* JsonObject::toString() {
+    const char* JsonObject::toJsonString() {
         String buf = "{";
         for(std::map<const char*, JsonValue*>::iterator it=pairs.begin(); it!=pairs.end(); it++) {
             if(it != pairs.begin()) buf += ',';
             buf += it->first;
-            buf += it->second->toString();
+            buf += it->second->toJsonString();
         }
         buf += "}";
         return buf.c_str();
