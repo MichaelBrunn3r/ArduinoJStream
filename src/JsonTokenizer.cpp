@@ -99,7 +99,7 @@ JsonTokenizer::Token JsonTokenizer::next(String* buf) {
     return Token::ERR;
 }
 
-const char* JsonTokenizer::tokenToStr(Token t) {
+const char* JsonTokenizer::tokenTypeToStr(Token t) {
     switch(t) {
         case Token::NaT: return "NaT";
         case Token::OBJ_START: return "{";
@@ -107,12 +107,14 @@ const char* JsonTokenizer::tokenToStr(Token t) {
         case Token::ARR_START: return "[";
         case Token::ARR_END: return "]";
         case Token::COMMA: return ",";
-        case Token::NUM: return "NUM";
+        case Token::STR: return "STR";
         case Token::FIELD_NAME: return "FIELD_NAME";
+        case Token::NUM: return "NUM";
         case Token::KW_NULL: return "null";
         case Token::KW_TRUE: return "true";
         case Token::KW_FALSE: return "false";
         case Token::ERR: return "ERR";
+        default: return "";
     }
 }
 
@@ -124,6 +126,7 @@ const char* JsonTokenizer::errorToStr(ParseError e) {
         case ParseError::MALFORMED_NUM: return "MALFORMED_NUM";
         case ParseError::UNESCAPEABLE_CHAR: return "UNESCAPEABLE_CHAR";
         case ParseError::UNTERMINATED_STR: return "UNTERMINATED_STR";
+        default: return "";
     }
 }
 

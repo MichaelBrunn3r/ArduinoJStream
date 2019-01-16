@@ -20,7 +20,7 @@ class JsonTokenizer {
             KW_FALSE, 
             ERR
         };
-        static const char* tokenToStr(Token t);
+        static const char* tokenTypeToStr(Token t);
 
         enum class ParseError : uint8_t {
             NaE = 0, // Not an Error

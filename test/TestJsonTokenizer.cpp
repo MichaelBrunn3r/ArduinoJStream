@@ -11,7 +11,7 @@
 #include <Streams/StringStream.h>
 
 std::ostream& operator << ( std::ostream& os, JsonTokenizer::Token const& value ) {
-    os << JsonTokenizer::tokenToStr(value);
+    os << JsonTokenizer::tokenTypeToStr(value);
     return os;
 }
 
