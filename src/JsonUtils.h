@@ -18,8 +18,8 @@ namespace Json {
 
     /** @brief Returns true if a character is a valid json hexadecimal digit **/
     bool isHexDigit(const char c) {
-        //     0-9                 A-F                   a-f
-        return c>=48 && c <= 57 || c >= 65 && c <= 70 || c >= 97 && c <= 102;
+        //            0-9                     A-F                    a-f
+        return (c>=48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102);
     }
 
     /** @brief Returns true if a character is a valid digit in a json number **/
