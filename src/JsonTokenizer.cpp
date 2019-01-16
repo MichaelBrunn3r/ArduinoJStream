@@ -1,5 +1,4 @@
 #include "JsonTokenizer.h"
-#include <iostream>
 #include <Streams/StringStream.h>
 #include <JsonUtils.h>
 
@@ -234,7 +233,7 @@ bool JsonTokenizer::readStr(String* buf) {
 }
 
 bool JsonTokenizer::matchStr(const char kw[], size_t length) {
-    for(int i=0; i<length; i++) {
+    for(size_t i=0; i<length; i++) {
         if(!is->hasNext() || kw[i] != is->peek()) return false;
         else is->next();
     }
