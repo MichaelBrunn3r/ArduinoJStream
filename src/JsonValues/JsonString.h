@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JsonValues/JsonValue.h>
+#include <WString.h>
 
 namespace Json {
 

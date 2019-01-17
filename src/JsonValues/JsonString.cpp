@@ -2,16 +2,14 @@
 
 namespace Json {
 
-    JsonString::JsonString(const char* str) : JsonValue(JsonValue::Type::STR) {
-        val = String(str);
-    }
-
-    JsonString::JsonString(String str) : JsonValue(JsonValue::Type::STR) {
-        val = str;
-    }
+    JsonString::JsonString(const char* str) : val(String(str)), JsonValue(JsonValue::Type::STR) {}
+    JsonString::JsonString(String str) : val(str), JsonValue(JsonValue::Type::STR) {}
 
     const char* JsonString::toJsonString() {
-        return String("\"" + val + "\"").c_str();
+        String buf = "\"";
+        buf += val;
+        buf += "\"";
+        return buf.c_str();
     }
 
 }
