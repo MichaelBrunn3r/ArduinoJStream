@@ -8,10 +8,12 @@ namespace Json {
         public:
             JsonNumber(const char* num);
             JsonNumber(String num);
+            JsonNumber(int num);
+            JsonNumber(long num);
             const char* toJsonString() override;
 
         private:
-            String val;
+            const char* val;
     };
 
 }

@@ -12,7 +12,7 @@ namespace Json {
             const char* toJsonString() override;
 
         private:
-            String val;
+            const char* val;
     };
 
 }

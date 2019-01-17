@@ -2,16 +2,12 @@
 
 namespace Json {
 
-    JsonNumber::JsonNumber(const char* num) : JsonValue(JsonValue::Type::NUM) {
-        val = num; 
-    }
-
-    JsonNumber::JsonNumber(String num) : JsonValue(JsonValue::Type::NUM) {
-        val = num;
-    }
+    JsonNumber::JsonNumber(const char* num) : val(num), JsonValue(JsonValue::Type::NUM) {}
+    JsonNumber::JsonNumber(String num) : val(num.c_str()), JsonValue(JsonValue::Type::NUM) {}
+    JsonNumber::JsonNumber(int num) : val(String(num).c_str()), JsonValue(JsonValue::Type::NUM) {}
+    JsonNumber::JsonNumber(long num) : val(String(num).c_str()), JsonValue(JsonValue::Type::NUM) {}
 
     const char* JsonNumber::toJsonString() {
-        return val.c_str();
+        return val;
     }
-
 }
