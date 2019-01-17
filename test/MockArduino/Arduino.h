@@ -1,6 +1,10 @@
 #pragma once
 #include "WString.h"
 
+#define DEC 10
+#define HEX 16
+#define OCT 8
+
 typedef uint8_t boolean;
 typedef uint8_t byte;
 
