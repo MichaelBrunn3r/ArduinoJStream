@@ -193,8 +193,14 @@ bool JsonTokenizer::readNum(String* buf) {
         if(state == FSM_State::ERROR) break;
 
         if(state == FSM_State::INT || state == FSM_State::DECIMAL || state == FSM_State::EXP) {
-            while(is->hasNext() && Json::isDecDigit(is->peek())) if(buf != nullptr) *buf += is->next();
-        } else if(buf != nullptr) *buf += is->next();        
+            while(is->hasNext() && Json::isDecDigit(is->peek())) {
+                char c = is->next();
+                if(buf != nullptr) *buf += c;
+            }
+        } else {
+            char c = is->next();
+            if(buf != nullptr) *buf += c;        
+        }
     }
 
     if(!isAcceptingState(state)) {
