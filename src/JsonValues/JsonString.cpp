@@ -1,6 +1,6 @@
 #include "JsonValues/JsonString.h"
 
-namespace Json {
+namespace JStream {
 
     JsonString::JsonString(const char* str) : val(str), JsonValue(JsonValue::Type::STR) {}
     JsonString::JsonString(String str) : val(str.c_str()), JsonValue(JsonValue::Type::STR) {}

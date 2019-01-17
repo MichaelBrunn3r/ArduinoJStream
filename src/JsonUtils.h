@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Json {
+namespace JStream {
     /** @brief Returns true if a character is a valid json whitespace **/
     bool isWhitespace(const char c) {
         return c == '\t' || c == '\n' || c == '\r' || c == ' ';

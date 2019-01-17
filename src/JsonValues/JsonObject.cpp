@@ -1,6 +1,6 @@
 #include "JsonValues/JsonObject.h"
 
-namespace Json {
+namespace JStream {
 
     JsonObject::JsonObject() : JsonValue(JsonValue::Type::OBJ) {}
 

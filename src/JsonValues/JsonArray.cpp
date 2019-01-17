@@ -1,6 +1,6 @@
 #include "JsonValues/JsonArray.h"
 
-namespace Json {
+namespace JStream {
 
     JsonArray::JsonArray() : JsonValue(JsonValue::Type::ARR) {}
 

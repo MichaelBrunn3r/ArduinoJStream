@@ -1,6 +1,6 @@
 #include "JsonValues/JsonValue.h"
 
-namespace Json {
+namespace JStream {
 
     const JsonValue* JsonValue::KW_TRUE = new JsonValue(JsonValue::Type::KW_TRUE);
     const JsonValue* JsonValue::KW_FALSE = new JsonValue(JsonValue::Type::KW_FALSE);

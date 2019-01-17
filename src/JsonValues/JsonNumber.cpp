@@ -1,6 +1,6 @@
 #include "JsonValues/JsonNumber.h"
 
-namespace Json {
+namespace JStream {
 
     JsonNumber::JsonNumber(const char* num) : val(num), JsonValue(JsonValue::Type::NUM) {}
     JsonNumber::JsonNumber(String num) : val(num.c_str()), JsonValue(JsonValue::Type::NUM) {}

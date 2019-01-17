@@ -3,7 +3,7 @@
 #include <JsonValues/JsonValue.h>
 #include <WString.h>
 
-namespace Json {
+namespace JStream {
 
     class JsonString : public JsonValue {
         public:

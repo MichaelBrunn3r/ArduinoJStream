@@ -10,6 +10,8 @@
 #include <JsonTokenizer.h>
 #include <Streams/StringStream.h>
 
+using namespace JStream;
+
 std::ostream& operator << ( std::ostream& os, JsonTokenizer::Token const& value ) {
     os << JsonTokenizer::tokenTypeToStr(value);
     return os;

@@ -2,7 +2,7 @@
 
 #include <JsonValues/JsonValue.h>
 
-namespace Json {
+namespace JStream {
 
     class JsonArray : public JsonValue {
         public:
