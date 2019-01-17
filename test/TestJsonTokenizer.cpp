@@ -225,6 +225,35 @@ SCENARIO("Tokenize strings", "[tokenize]") {
     }
 }
 
+SCENARIO("Tokenize Arrays", "[tokenize]") {
+    auto tok = JsonTokenizer();
+    GIVEN("empty array") {
+        tok.tokenize("[]");
+        REQUIRE(tok.hasNext());
+        REQUIRE(tok.next(nullptr) == JsonTokenizer::Token::ARR_START);
+        REQUIRE(tok.hasNext());
+        REQUIRE(tok.next(nullptr) == JsonTokenizer::Token::ARR_END);
+        REQUIRE_FALSE(tok.hasNext());
+    }
+
+    GIVEN("arrays of numbers") {
+        std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> arrs = {
+            {"[1,2,3,4]", 
+                {{JsonTokenizer::Token::ARR_START, ""}, {JsonTokenizer::Token::NUM, "1"}, {JsonTokenizer::Token::COMMA, ""}, {JsonTokenizer::Token::NUM, "2"},
+                {JsonTokenizer::Token::COMMA, ""}, {JsonTokenizer::Token::NUM, "3"}, {JsonTokenizer::Token::COMMA, ""}, {JsonTokenizer::Token::NUM, "4"}, 
+                {JsonTokenizer::Token::ARR_END, ""}}},
+            {"[-12,-123124.123,0.523,123.2e-123]", 
+                {{JsonTokenizer::Token::ARR_START, ""}, {JsonTokenizer::Token::NUM, "-12"}, {JsonTokenizer::Token::COMMA, ""}, 
+                {JsonTokenizer::Token::NUM, "-123124.123"}, {JsonTokenizer::Token::COMMA, ""}, {JsonTokenizer::Token::NUM, "0.523"}, {JsonTokenizer::Token::COMMA, ""},
+                {JsonTokenizer::Token::NUM, "123.2e-123"}, {JsonTokenizer::Token::ARR_END, ""}}}
+        };
+
+        for(int i=0; i<arrs.size(); i++) {
+            matchGeneratedTokens(&tok, arrs[i].first, arrs[i].second);
+        }
+    }
+}
+
 /**
  * Test if 'JsonTokenizer::peek' and 'JsonTokenizer::next' return the same Tokens
  */
