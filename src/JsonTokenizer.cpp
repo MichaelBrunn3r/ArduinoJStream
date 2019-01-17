@@ -141,7 +141,7 @@ void JsonTokenizer::skipWhitespace() const {
 
 bool JsonTokenizer::readNum(String* buf) {
     /**
-     * Deterministic Finite State Machine for validating Json numbers.
+     * Deterministic Finite State Machine (DFSM) for validating Json numbers.
      * 
      *      |  START  | INT_SIGN |  [ZERO]  | [INT] | PERIOD | [DECIMAL] |    E     | EXP_SIGN | [EXP]
      * -----|---------|----------|----------|-------|--------|-----------|----------|----------|-------
@@ -150,7 +150,7 @@ bool JsonTokenizer::readNum(String* buf) {
      *   -  | INT_SIGN|    -     |    -     |   -   |   -    |     -     | EXP_SING |    -     |   -
      *   +  |    -    |    -     |    -     |   -   |   -    |     -     | EXP_SING |    -     |   -
      *   .  |    -    |    -     |  PERIOD  | PERIOD|   -    |     -     |    -     |    -     |   -
-     *  e/E |    -    |    -     |    E     |   -   |   -    |     E     |    -     |    -     |   -
+     *  e/E |    -    |    -     |    E     |   E   |   -    |     E     |    -     |    -     |   -
      * 
      * '[...]' - Accepting state
      * '-' - No transition for char -> Error
