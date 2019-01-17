@@ -188,7 +188,10 @@ bool JsonTokenizer::readNum(String* buf) {
         } else if(c == '+') {
             if(state == FSM_State::E) state = FSM_State::EXP_SIGN;
             else state = FSM_State::ERROR;
-        } else state = FSM_State::ERROR;
+        } else {
+            if(isAcceptingState(state)) break;
+            else state = FSM_State::ERROR;
+        }
 
         if(state == FSM_State::ERROR) break;
 
