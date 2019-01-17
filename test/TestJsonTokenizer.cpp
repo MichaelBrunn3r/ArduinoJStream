@@ -21,6 +21,14 @@ std::ostream& operator << ( std::ostream& os, JsonTokenizer::ParseError const& v
 }
 
 void matchGeneratedTokens(JsonTokenizer* tok, String json, std::vector<std::pair<JsonTokenizer::Token, String>> tokens) {
+    // Don't check Token Values
+    tok->tokenize(json);
+    for(int k=0; k<tokens.size(); k++) {
+        REQUIRE(tok->next(nullptr) == tokens[k].first);
+    }
+    REQUIRE_FALSE(tok->hasNext());
+
+    // Check Token Values
     tok->tokenize(json);
     for(int k=0; k<tokens.size(); k++) {
         String buf = "";
@@ -31,6 +39,17 @@ void matchGeneratedTokens(JsonTokenizer* tok, String json, std::vector<std::pair
 }
 
 void matchGeneratedTokensAndErrors(JsonTokenizer* tok, String json, std::vector<std::tuple<JsonTokenizer::Token, JsonTokenizer::ParseError, String>> tokens) {
+    // Don't check Token Values
+    tok->tokenize(json);
+    for(int k=0; k<tokens.size(); k++) {
+        REQUIRE(tok->next(nullptr) == std::get<0>(tokens[k]));
+        if(std::get<0>(tokens[k]) == JsonTokenizer::Token::ERR) {
+            REQUIRE(tok->getErrorCode() == std::get<1>(tokens[k]));
+        }
+    }
+    REQUIRE_FALSE(tok->hasNext());
+
+    // Check Token Values
     tok->tokenize(json);
     for(int k=0; k<tokens.size(); k++) {
         String buf = "";
