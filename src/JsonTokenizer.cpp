@@ -161,7 +161,7 @@ bool JsonTokenizer::readNum(String* buf) {
         INT = 0, ZERO = 1, DECIMAL = 2, EXP = 3,
 
         // Non-Accepting States
-        START, INT_SIGN, PERIOD, E, EXP_SIGN, ERROR
+        START, INT_SIGN, PERIOD, E, EXP_SIGN
     };
     #define isAcceptingState(x) (x <= 3)
     FSM_State state = FSM_State::START;
@@ -169,31 +169,26 @@ bool JsonTokenizer::readNum(String* buf) {
     while(is->hasNext()) {
         char c = is->peek();
         
-        // State Machine Transitions sorted by their conditional char
+        // DFSM transitions sorted by their conditional char
         if(Json::isDecDigit(c)) {
-            if(state == FSM_State::START || state == FSM_State::INT_SIGN) state = c == '0' ? FSM_State::ZERO : FSM_State::INT;
+            if(state == FSM_State::START || state == FSM_State::INT_SIGN) state = (c == '0' ? FSM_State::ZERO : FSM_State::INT);
             else if(state == FSM_State::PERIOD) state = FSM_State::DECIMAL;
             else if(state == FSM_State::E || state == FSM_State::EXP_SIGN) state = FSM_State::EXP;
-            else state = FSM_State::ERROR;
+            else goto EXIT_LOOP;
         } else if(c == '-') {
             if(state == FSM_State::START) state = FSM_State::INT_SIGN;
             else if(state == FSM_State::E) state = FSM_State::EXP_SIGN;
-            else state = FSM_State::ERROR;
+            else goto EXIT_LOOP;
         } else if(c == '.') {
             if(state == FSM_State::INT || state == FSM_State::ZERO) state = FSM_State::PERIOD;
-            else state = FSM_State::ERROR;
+            else goto EXIT_LOOP;
         } else if(c == 'e' || c == 'E') {
             if(state == FSM_State::INT || state == FSM_State::ZERO || state == FSM_State::DECIMAL) state = FSM_State::E;
-            else state = FSM_State::ERROR;
+            else goto EXIT_LOOP;
         } else if(c == '+') {
             if(state == FSM_State::E) state = FSM_State::EXP_SIGN;
-            else state = FSM_State::ERROR;
-        } else {
-            if(isAcceptingState(state)) break;
-            else state = FSM_State::ERROR;
-        }
-
-        if(state == FSM_State::ERROR) break;
+            else goto EXIT_LOOP;
+        } else goto EXIT_LOOP;
 
         if(state == FSM_State::INT || state == FSM_State::DECIMAL || state == FSM_State::EXP) {
             while(is->hasNext() && Json::isDecDigit(is->peek())) {
@@ -205,12 +200,22 @@ bool JsonTokenizer::readNum(String* buf) {
             if(buf != nullptr) *buf += c;        
         }
     }
+    EXIT_LOOP:
 
-    if(!isAcceptingState(state)) {
+    if(is->hasNext() && Json::isNumDigit(is->peek())) {
         errorCode = ParseError::MALFORMED_NUM;
-        while(is->hasNext() && Json::isNumDigit(is->peek())) if(buf != nullptr) *buf += is->next();
+        while(is->hasNext() && Json::isNumDigit(is->peek())) {
+            char c = is->next();
+            if(buf != nullptr) *buf += c;  
+        }
         return false;
-    } else return true;
+    } else {
+        if(!isAcceptingState(state)) {
+            errorCode = ParseError::MALFORMED_NUM;
+            return false;
+        }
+        return true;
+    }
 
     #undef isAcceptingState
 }
