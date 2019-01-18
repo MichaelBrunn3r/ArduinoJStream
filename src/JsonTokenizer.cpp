@@ -4,6 +4,15 @@
 
 namespace JStream {
     JsonTokenizer::JsonTokenizer() {}
+
+    JsonTokenizer::JsonTokenizer(String str) {
+        tokenize(str);
+    }
+
+    JsonTokenizer::JsonTokenizer(InputStream* is) {
+        tokenize(is);
+    }
+
     JsonTokenizer::~JsonTokenizer() {
         delete is;
     }

@@ -34,6 +34,8 @@ namespace JStream {
             static const char* errorToStr(ParseError e);
 
             JsonTokenizer();
+            JsonTokenizer(String str);
+            JsonTokenizer(InputStream* is);
             ~JsonTokenizer();
 
             /**
