@@ -15,4 +15,6 @@ class String : public std::string {
 
         char charAt(unsigned int index);
         unsigned char concat(char c);
+
+        long toInt(void) const;
 };

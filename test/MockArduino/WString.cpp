@@ -1,6 +1,7 @@
 #include "WString.h"
 #include <string.h>
 #include <stdio.h>
+#include <cstdlib>
 
 String::String(const char* str) : std::string(str) {}
 String::String(const char c) : std::string() {
@@ -45,4 +46,8 @@ char String::charAt(unsigned int index) {return at(index);}
 
 unsigned char String::concat(char c) {
     push_back(c);
+}
+
+long String::toInt(void) const {
+    return std::atoi(this->c_str());
 }
