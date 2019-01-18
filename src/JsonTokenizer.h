@@ -57,7 +57,7 @@ namespace JStream {
              * @return true 
              * @return false 
              */
-            bool hasNext();
+            inline bool hasNext() {return is->hasNext();}
             /**
              * @brief Returns the next token without advancing the tokenizer
              * 
@@ -87,9 +87,6 @@ namespace JStream {
 
             void skipWhitespace() const;
             bool readNum(String* buf);
-            bool readInt(String* buf);
-            bool readFrac(String* buf);
-            bool readExp(String* buf);
             bool readStr(String* buf);
             bool matchStr(const char kw[], size_t length);
     };

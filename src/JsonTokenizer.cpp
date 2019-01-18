@@ -28,10 +28,6 @@ namespace JStream {
         this->is = is;
     }
 
-    bool JsonTokenizer::hasNext() {
-        return is->hasNext();
-    }
-
     JsonTokenizer::Token JsonTokenizer::peek(String* buf) {
         if(currentToken == Token::NaT) {
             currentVal = "";
