@@ -79,7 +79,7 @@ namespace JStream {
 
             inline ParseError getErrorCode() {return errorCode;}
         private:
-            InputStream* is;
+            InputStream* is = nullptr;
             Token currentToken = Token::NaT;
             String currentVal = "";
 

@@ -14,7 +14,7 @@ namespace JStream {
     }
 
     JsonTokenizer::~JsonTokenizer() {
-        delete is;
+        if(this->is != nullptr) delete this->is;
     }
 
     void JsonTokenizer::tokenize(String str) {tokenize(new StringStream(str));}
@@ -22,6 +22,9 @@ namespace JStream {
     void JsonTokenizer::tokenize(InputStream* is) {
         currentToken = Token::NaT;
         currentVal = "";
+
+        if(this->is != nullptr) delete this->is;
+
         this->is = is;
     }
 
