@@ -85,16 +85,16 @@ static String jsonExample1 =
  */
 SCENARIO("Tokenize basic Tokens") {
     auto tok = JsonTokenizer();
-    std::pair<String, JsonTokenizer::Token> tokens[] = 
+    std::vector<std::pair<String, JsonTokenizer::Token>> tokens = 
         {{"{", JsonTokenizer::Token::OBJ_START},{"}", JsonTokenizer::Token::OBJ_END},{"[", JsonTokenizer::Token::ARR_START},{"]", JsonTokenizer::Token::ARR_END}, 
         {",", JsonTokenizer::Token::COMMA}, {"null", JsonTokenizer::Token::KW_NULL}, {"true", JsonTokenizer::Token::KW_TRUE}, 
         {"false", JsonTokenizer::Token::KW_FALSE}};
     
-    for(int i=0; i<sizeof(tokens)/sizeof(std::pair<String, JsonTokenizer::Token>); i++) {
-        tok.tokenize(new StringStream(tokens[i].first));
+    for(auto it=tokens.begin(); it!=tokens.end(); ++it) {
+        tok.tokenize(new StringStream(it->first));
         REQUIRE(tok.hasNext());
         String buf = "";
-        REQUIRE(tok.next(&buf) == tokens[i].second);
+        REQUIRE(tok.next(&buf) == it->second);
         REQUIRE(buf == "");
         REQUIRE_FALSE(tok.hasNext());
     }
@@ -112,8 +112,8 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
             {"-4192359128129591469102380120350", {{JsonTokenizer::Token::NUM, "-4192359128129591469102380120350"}}}
         };
 
-        for(int i=0; i<ints.size(); i++) {
-            matchGeneratedTokens(&tok, ints[i].first, ints[i].second);
+        for(auto it=ints.begin(); it!=ints.end(); ++it) {
+            matchGeneratedTokens(&tok, it->first, it->second);
         }
     }
     GIVEN("invalid integers") {
@@ -123,21 +123,21 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
             {"-0234", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "-0234"}}}
         };
 
-        for(int i=0; i<ints.size(); i++) {
-            matchGeneratedTokensAndErrors(&tok, ints[i].first, ints[i].second);
+        for(auto it=ints.begin(); it!=ints.end(); ++it) {
+            matchGeneratedTokensAndErrors(&tok, it->first, it->second);
         }
     }
 
     // FRACTIONS
     GIVEN("valid decimals") {
-        std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> ints = {
+        std::vector<std::pair<String, std::vector<std::pair<JsonTokenizer::Token, String>>>> fracs = {
             {"0.0", {{JsonTokenizer::Token::NUM, "0.0"}}},
             {"0.6343", {{JsonTokenizer::Token::NUM, "0.6343"}}},
             {"0.0006343000", {{JsonTokenizer::Token::NUM, "0.0006343000"}}}
         };
 
-        for(int i=0; i<ints.size(); i++) {
-            matchGeneratedTokens(&tok, ints[i].first, ints[i].second);
+        for(auto it=fracs.begin(); it!=fracs.end(); ++it) {
+            matchGeneratedTokens(&tok, it->first, it->second);
         }
     }
     GIVEN("invalid decimals") {
@@ -148,8 +148,8 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
             {"0.012.032", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0.012.032"}}}
         };
 
-        for(int i=0; i<fracs.size(); i++) {
-            matchGeneratedTokensAndErrors(&tok, fracs[i].first, fracs[i].second);
+        for(auto it=fracs.begin(); it!=fracs.end(); ++it) {
+            matchGeneratedTokensAndErrors(&tok, it->first, it->second);
         }
     }
 
@@ -162,8 +162,8 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
             {"0E+311", {{JsonTokenizer::Token::NUM, "0E+311"}}}
         };
 
-        for(int i=0; i<exps.size(); i++) {
-            matchGeneratedTokens(&tok, exps[i].first, exps[i].second);
+        for(auto it=exps.begin(); it!=exps.end(); ++it) {
+            matchGeneratedTokens(&tok, it->first, it->second);
         }
     }
     GIVEN("invalid exponents") {
@@ -176,8 +176,8 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
             {"0e++", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0e++"}}}
         };
 
-        for(int i=0; i<exps.size(); i++) {
-            matchGeneratedTokensAndErrors(&tok, exps[i].first, exps[i].second);
+        for(auto it=exps.begin(); it!=exps.end(); ++it) {
+            matchGeneratedTokensAndErrors(&tok, it->first, it->second);
         }
     }
 
@@ -201,8 +201,8 @@ SCENARIO("Tokenize numbers", "[tokenize]") {
             {"0e-12e+2", {{JsonTokenizer::Token::ERR, JsonTokenizer::ParseError::MALFORMED_NUM, "0e-12e+2"}}}
         };
 
-        for(int i=0; i<nums.size(); i++) {
-            matchGeneratedTokensAndErrors(&tok, nums[i].first, nums[i].second);
+        for(auto it=nums.begin(); it!=nums.end(); ++it) {
+            matchGeneratedTokensAndErrors(&tok, it->first, it->second);
         }
     }
 }
@@ -221,8 +221,8 @@ SCENARIO("Tokenize strings", "[tokenize]") {
             {"\"\\\\\"", {{JsonTokenizer::Token::STR, "\\"}}}  // Escape '\'
         };
 
-        for(int i=0; i<strs.size(); i++) {
-            matchGeneratedTokens(&tok, strs[i].first, strs[i].second);
+        for(auto it=strs.begin(); it!=strs.end(); ++it) {
+            matchGeneratedTokens(&tok, it->first, it->second);
         }
     }
     GIVEN("invalid strings") {
@@ -240,8 +240,8 @@ SCENARIO("Tokenize strings", "[tokenize]") {
                                     {JsonTokenizer::Token::ARR_END, JsonTokenizer::ParseError::NaE, ""}}}
         };
 
-        for(int i=0; i<strs.size(); i++) {
-            matchGeneratedTokensAndErrors(&tok, strs[i].first, strs[i].second);
+        for(auto it=strs.begin(); it!=strs.end(); ++it) {
+            matchGeneratedTokensAndErrors(&tok, it->first, it->second);
         }
     }
 }
@@ -269,8 +269,8 @@ SCENARIO("Tokenize Arrays", "[tokenize]") {
                 {JsonTokenizer::Token::NUM, "123.2e-123"}, {JsonTokenizer::Token::ARR_END, ""}}}
         };
 
-        for(int i=0; i<arrs.size(); i++) {
-            matchGeneratedTokens(&tok, arrs[i].first, arrs[i].second);
+        for(auto it=arrs.begin(); it!=arrs.end(); ++it) {
+            matchGeneratedTokens(&tok, it->first, it->second);
         }
     }
 }
