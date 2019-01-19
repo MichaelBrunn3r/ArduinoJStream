@@ -10,5 +10,7 @@ namespace JStream {
         c_str = (char*) malloc(sizeof(char) * length);
         strcpy(c_str, str);
     }   
-    StringStream::~StringStream() {}
+    StringStream::~StringStream() {
+        delete[] c_str;
+    }
 }
