@@ -4,10 +4,10 @@
 
 namespace JStream {
     void JsonParser::parseIntArray(std::vector<int>* vec, const char* json, size_t length) {
-        size_t idx = 0;
-        #define hasNext() (idx < length)
-        #define peek() json[idx]
-        #define next() json[idx++]
+        const char* end = json+length;
+        #define hasNext() (json < end)
+        #define peek() *json
+        #define next() *json++
 
         if(!hasNext() || peek() != '[') return;
         else next();
