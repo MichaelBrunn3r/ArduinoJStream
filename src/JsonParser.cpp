@@ -3,10 +3,8 @@
 #include <cstring>
 
 namespace JStream {
-    CharBuffer JsonParser::buf = CharBuffer(18);
-
     void JsonParser::parseIntArray(std::vector<int>* vec, const char* json, size_t length) {
-        uint_fast16_t idx = 0;
+        size_t idx = 0;
         #define hasNext() (idx < length)
         #define peek() json[idx]
         #define next() json[idx++]
@@ -14,23 +12,28 @@ namespace JStream {
         if(!hasNext() || peek() != '[') return;
         else next();
 
+        int sign;
+        int num;
+        bool firstNumber = true;
         while(hasNext()) {
-            if(peek() == ']') {
+            if(peek() == ',') {
+                next();
+            } else if(peek() == ']') {
                 next();
                 return;
+            } else if(!firstNumber) return;
+
+            sign = 1;
+            num = 0;
+            if(hasNext() && peek() == '-') {
+                next();
+                sign = -1;
             }
 
-            if(!vec->empty() && next() != ',') return;
-
-            if(hasNext() && JStream::isNumDigit(peek())) {
-                uint_fast16_t num_start = idx;
-                while(hasNext() && JStream::isNumDigit(peek())) {
-                    idx++;
-                }
-                char num[idx-num_start+1];
-                memcpy(num, json+num_start, idx-num_start+1);
-                vec->push_back(atoi(num));
-            } else return;
+            while(hasNext() && JStream::isDecDigit(peek())) {
+                num = num*10 + next() - '0';
+            }
+            vec->push_back(sign*num);
         }
 
         #undef hasNext
