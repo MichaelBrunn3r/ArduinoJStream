@@ -37,19 +37,5 @@ namespace JStream {
     }
 
     /** @brief Tries to escapes a character. Returns the same char, if the resulting char would not be valid in json. */
-    char escape(const char c) {
-        switch(c) {
-            // case '"': return '"';
-            // case '\\': return '\\';
-            // case '/': return '\/';
-
-            // sorted by suspected frequency
-            case 'n': return '\n';
-            case 't': return '\t';
-            case 'r': return '\r';
-            case 'b': return '\b';
-            case 'f': return '\f';
-            default: return c;
-        }
-    }
+    char escape(const char c);
 }

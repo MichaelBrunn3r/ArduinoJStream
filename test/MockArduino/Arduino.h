@@ -1,4 +1,6 @@
-#pragma once
+#ifndef MOCK_Arduino_HEADER
+#define MOCK_Arduino_HEADER
+
 #include "WString.h"
 
 #define DEC 10
@@ -17,3 +19,5 @@ class HardwareSerial {
 
 extern HardwareSerial Serial;
 extern void delay(unsigned long);
+
+#endif //MOCK_Arduino_HEADER
