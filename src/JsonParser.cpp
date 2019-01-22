@@ -40,4 +40,33 @@ namespace JStream {
         #undef peek
         #undef next
     }
+
+    bool hasNext(Stream* stream) {
+        if(!stream->available()) {
+            stream->peek();
+        }
+        return stream->available() > 0;
+    }
+
+    void JsonParser::parseIntArray(std::vector<int>* vec, Stream* stream) {
+        if(stream->peek() != '[') return;
+        else stream->read();
+
+        bool firstNumber = true;
+        while(hasNext(stream)) {
+            if(stream->peek() == ',') stream->read();
+            else if(stream->peek() == ']') {
+                stream->read();
+                return;
+            } else if(!firstNumber) return;
+
+            char c = stream->peek();
+            if(JStream::isDecDigit(c) || c == '-') {
+                long num = stream->parseInt();
+                if(!(c != '0' && num == 0)) {
+                    vec->push_back(num);
+                } else return;
+            } else return;
+        }
+    }
 }
