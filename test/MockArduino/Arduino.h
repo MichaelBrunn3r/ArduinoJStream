@@ -2,6 +2,7 @@
 #define MOCK_Arduino_HEADER
 
 #include "WString.h"
+#include <ctime>
 
 #define DEC 10
 #define HEX 16
@@ -19,5 +20,8 @@ class HardwareSerial {
 
 extern HardwareSerial Serial;
 extern void delay(unsigned long);
+long random(long);
+long random(long, long);
+void randomSeed(unsigned long);
 
 #endif //MOCK_Arduino_HEADER
