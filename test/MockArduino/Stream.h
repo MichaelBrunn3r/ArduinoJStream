@@ -10,6 +10,7 @@ class Stream {
         virtual size_t readBytes(char* buf, const int length) = 0;
         virtual size_t readBytes(byte* buf, const int length) = 0;
         virtual int peek() = 0;
+        virtual long parseInt();
 };
 
 #endif //MOCK_Stream_HEADER
