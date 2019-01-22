@@ -41,7 +41,7 @@ namespace JStream {
         #undef next
     }
 
-    bool hasNext(Stream* stream) {
+    inline bool hasNext(Stream* stream) {
         if(!stream->available()) {
             stream->peek();
         }
@@ -52,21 +52,64 @@ namespace JStream {
         if(stream->peek() != '[') return;
         else stream->read();
 
-        bool firstNumber = true;
-        while(hasNext(stream)) {
-            if(stream->peek() == ',') stream->read();
-            else if(stream->peek() == ']') {
-                stream->read();
-                return;
-            } else if(!firstNumber) return;
+        #define buf_capacity 32
+        char buf[buf_capacity];
+        size_t buf_len = buf_capacity;
+        char* buf_it = buf;
+        char* buf_end = buf;
 
-            char c = stream->peek();
-            if(JStream::isDecDigit(c) || c == '-') {
-                long num = stream->parseInt();
-                if(!(c != '0' && num == 0)) {
-                    vec->push_back(num);
-                } else return;
-            } else return;
+        #define hasNext() (buf_it<buf_end)
+        #define next() (*buf_it++)
+        #define peek() (*buf_it)
+
+        long num = 0;
+        int sign = 1;
+
+        while(true) {   
+            if(buf_it == buf_end) {
+                if(buf_len < buf_capacity) {
+                    vec->push_back(num*sign);
+                    break;
+                }
+
+                buf_len = stream->readBytesUntil(']', (char*) buf, buf_capacity);
+
+                if(buf_len == 0) {
+                    vec->push_back(num*sign);
+                    break;
+                }
+
+                buf_it = buf;
+                buf_end = buf+buf_len;
+
+                if(hasNext() && peek() == '-') {
+                    sign = -1;
+                    next();
+                }
+            }
+            
+            if(hasNext() && peek() == ',') {
+                next();
+                vec->push_back(num*sign);
+                
+                num = 0;
+
+                if(hasNext() && peek() == '-') {
+                    sign = -1;
+                    next();
+                } else {
+                    sign = 1;
+                }
+            }
+
+            while(hasNext() && JStream::isDecDigit(peek())) {
+                num = num*10 + next() - '0';
+            }
         }
+        
+        #undef buf_capacity
+        #undef hasNext
+        #undef next
+        #undef peek
     }
 }
