@@ -81,3 +81,11 @@ size_t Stream::readBytesUntil(char terminator, char *buffer, size_t length) {
     }
     return index; // return number of characters, not including null terminator
 }
+
+String Stream::readString() {
+    String ret;
+    while(available()) {
+        ret += (char) read();
+    }
+    return ret;
+}

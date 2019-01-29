@@ -6,14 +6,18 @@
 
 class MockStringStream : public Stream {
     public:
-        MockStringStream(String str);
+        MockStringStream(const char* str, bool fakeNetworkHickups = false);
 
         int available();
         int read();
+        int peek();
         size_t readBytes(char* buf, const int length);
         size_t readBytes(byte* buf, const int length);
-        int peek();
+        size_t write(uint8_t);
+        
     private:
-        size_t idx = 0;
-        String str;
+        const char* str;
+
+        bool fakeNetworkHickups;
+        size_t chars_to_delay = 0;
 };

@@ -147,4 +147,39 @@ namespace JStream {
         #undef peek
         #undef next
     }
+
+    void JsonParser::skipUntilKey(Stream* stream, const char* key) {
+
+        if(!*key) return;
+        
+        while(stream->available()) {
+            if(stream->read() == '"') {
+                // Match key
+                const char* key_idx = key;
+                while(stream->available()) {
+                    if(stream->peek() == *key_idx) {
+                        key_idx++;
+                        stream->read();
+                        if(!*key_idx) { // Reached string terminator -> matched key
+                            if(!*key_idx && stream->read() == '"' && stream->peek() == ':') {
+                                stream->read();
+                                goto EXIT_LOOP;
+                            } 
+                        } 
+                    } else break;
+                }
+
+                // Couldn't match key. Skip until the end of the current key
+                bool escaped = false;
+                while(stream->available()) {
+                    char c = stream->read();
+                    if(c == '\\') escaped = true;
+                    else if(!escaped && c == '"') break;
+                    else escaped = false;
+                }
+            }
+        }
+        EXIT_LOOP:
+        return;
+    }
 }

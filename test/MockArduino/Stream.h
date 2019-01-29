@@ -18,6 +18,8 @@ class Stream {
         virtual long parseInt(char skipChar = NO_SKIP_CHAR);
         virtual size_t write(uint8_t) = 0;
 
+        String readString();
+
     protected:
         unsigned long _timeout;
         unsigned long _startMillis;
