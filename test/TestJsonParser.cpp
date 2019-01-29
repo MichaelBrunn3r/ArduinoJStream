@@ -8,8 +8,6 @@
 
 #include <Arduino.h>
 #include <JsonParser.h>
-#include <Streams/StringStream.h>
-#include <CharBuffer.h>
 #include <MockStringStream.h>
 
 using namespace JStream;
