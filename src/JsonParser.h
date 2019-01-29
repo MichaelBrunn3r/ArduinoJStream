@@ -9,5 +9,6 @@ namespace JStream {
         public:
             void parseIntArray(std::vector<int>* vec, const char* json, size_t length);
             void parseIntArray(std::vector<int>* vec, Stream* stream);
+            const char* skipUntilKey(const char* json, const char* pattern);
     };
 }

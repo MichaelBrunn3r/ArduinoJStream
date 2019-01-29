@@ -14,7 +14,7 @@ typedef uint8_t byte;
 class HardwareSerial {
     public:
         size_t print(const String &str);
-        size_t print(const char str[]);
+        size_t print(const char* str);
         size_t print(char c);
 };
 

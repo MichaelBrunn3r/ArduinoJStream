@@ -41,13 +41,6 @@ namespace JStream {
         #undef next
     }
 
-    inline bool hasNext(Stream* stream) {
-        if(!stream->available()) {
-            stream->peek();
-        }
-        return stream->available() > 0;
-    }
-
     void JsonParser::parseIntArray(std::vector<int>* vec, Stream* stream) {
         if(stream->peek() != '[') return;
         else stream->read();
@@ -82,7 +75,7 @@ namespace JStream {
                 buf_it = buf;
                 buf_end = buf+buf_len;
 
-                if(hasNext() && peek() == '-') {
+                if(peek() == '-') {
                     sign = -1;
                     next();
                 }
@@ -111,5 +104,47 @@ namespace JStream {
         #undef hasNext
         #undef next
         #undef peek
+    }
+
+    const char* JsonParser::skipUntilKey(const char* json, const char* key) {
+        #define hasNext() (*json)
+        #define peek() (*json)
+        #define next() (*json++)
+
+        if(!*json || !*key) return json;
+        
+        while(hasNext()) {
+            if(next() == '"') {
+                // Match key
+                const char* key_idx = key;
+                while(hasNext()) {
+                    if(peek() == *key_idx) {
+                        key_idx++;
+                        next();
+                        if(!*key_idx) { // Reached string terminator -> matched key
+                            if(!*key_idx && next() == '"' && peek() == ':') {
+                                next();
+                                goto EXIT_LOOP;
+                            } 
+                        } 
+                    } else break;
+                }
+
+                // Couldn't match key. Skip until the end of the current key
+                bool escaped = false;
+                while(hasNext()) {
+                    char c = next();
+                    if(c == '\\') escaped = true;
+                    else if(!escaped && c == '"') break;
+                    else escaped = false;
+                }
+            }
+        }
+        EXIT_LOOP:
+        return json;
+
+        #undef hasNext
+        #undef peek
+        #undef next
     }
 }
