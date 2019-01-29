@@ -15,7 +15,6 @@
 using namespace JStream;
 
 SCENARIO("Method 'skipUntilKey'", "[skipUntilKey]") {
-    JsonParser parser;
     GIVEN("Json with matching key") {
         /** Json | key | resulting Json **/
         std::vector<std::tuple<const char*, const char*, const char*>> parse = {
@@ -28,10 +27,10 @@ SCENARIO("Method 'skipUntilKey'", "[skipUntilKey]") {
         
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             INFO("json: " << std::get<0>(*it));
-            CHECK_THAT(parser.skipUntilKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(JsonParser::skipUntilKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
 
             MockStringStream* stream = new MockStringStream(std::get<0>(*it));
-            parser.skipUntilKey(stream, std::get<1>(*it));
+            JsonParser::skipUntilKey(stream, std::get<1>(*it));
             CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
         }
     }
@@ -51,10 +50,10 @@ SCENARIO("Method 'skipUntilKey'", "[skipUntilKey]") {
         
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             INFO("json: " << std::get<0>(*it));
-            CHECK_THAT(parser.skipUntilKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(JsonParser::skipUntilKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
 
             MockStringStream* stream = new MockStringStream(std::get<0>(*it));
-            parser.skipUntilKey(stream, std::get<1>(*it));
+            JsonParser::skipUntilKey(stream, std::get<1>(*it));
             CHECK_THAT(stream->readString(), Catch::Matchers::Equals(std::get<2>(*it)));
         }
     }
