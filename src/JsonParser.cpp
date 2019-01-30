@@ -122,7 +122,7 @@ namespace JStream {
         }
     }
 
-    const char* JsonParser::skipUntilKey(const char* json, const char* key) {
+    const char* JsonParser::findKey(const char* json, const char* key) {
         #define hasNext() (*json)
         #define peek() (*json)
         #define next() (*json++)
@@ -164,7 +164,7 @@ namespace JStream {
         #undef next
     }
 
-    void JsonParser::skipUntilKey(Stream* stream, const char* key) {
+    void JsonParser::findKey(Stream* stream, const char* key) {
 
         if(!*key) return;
         
@@ -224,7 +224,7 @@ namespace JStream {
 
     void JsonParser::exitCollections(Stream* stream, size_t count) {
         if(count<1) return;
-        
+
         size_t nesting = count-1;
         while(stream->available()) {
             switch(stream->read()) {

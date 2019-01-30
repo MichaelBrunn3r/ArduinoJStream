@@ -15,8 +15,8 @@ namespace JStream {
              * @param insideString Indicates if this method should skip over a String or exit the current one
              */
             static void skipString(Stream* stream, bool insideString = false);
-            static const char* skipUntilKey(const char* json, const char* key);
-            static void skipUntilKey(Stream* stream, const char* key);
+            static const char* findKey(const char* json, const char* key);
+            static void findKey(Stream* stream, const char* key);
             /** 
              * @brief Skips to the next key/value in the current object/array
              * 

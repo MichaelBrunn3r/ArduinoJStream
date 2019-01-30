@@ -24,9 +24,9 @@ SCENARIO("JsonParser::skipString") {
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             INFO("json: " << it->first);
 
-            MockStringStream* stream = new MockStringStream(it->first);
-            JsonParser::skipString(stream, false);
-            CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(it->second));
+            MockStringStream stream = MockStringStream(it->first);
+            JsonParser::skipString(&stream, false);
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(it->second));
         }
     }
 
@@ -41,14 +41,14 @@ SCENARIO("JsonParser::skipString") {
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             INFO("json: " << it->first);
 
-            MockStringStream* stream = new MockStringStream(it->first);
-            JsonParser::skipString(stream, true);
-            CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(it->second));
+            MockStringStream stream = MockStringStream(it->first);
+            JsonParser::skipString(&stream, true);
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(it->second));
         }
     }
 }
 
-SCENARIO("JsonParser::skipUntilKey", "[skipUntilKey]") {
+SCENARIO("JsonParser::findKey", "[findKey]") {
     GIVEN("Json with matching key") {
         /** Json | key | resulting Json **/
         std::vector<std::tuple<const char*, const char*, const char*>> parse = {
@@ -61,11 +61,11 @@ SCENARIO("JsonParser::skipUntilKey", "[skipUntilKey]") {
         
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             INFO("json: " << std::get<0>(*it));
-            CHECK_THAT(JsonParser::skipUntilKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(JsonParser::findKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
 
-            MockStringStream* stream = new MockStringStream(std::get<0>(*it));
-            JsonParser::skipUntilKey(stream, std::get<1>(*it));
-            CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            JsonParser::findKey(&stream, std::get<1>(*it));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
         }
     }
 
@@ -85,11 +85,11 @@ SCENARIO("JsonParser::skipUntilKey", "[skipUntilKey]") {
         
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             INFO("json: " << std::get<0>(*it));
-            CHECK_THAT(JsonParser::skipUntilKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(JsonParser::findKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
 
-            MockStringStream* stream = new MockStringStream(std::get<0>(*it));
-            JsonParser::skipUntilKey(stream, std::get<1>(*it));
-            CHECK_THAT(stream->readString(), Catch::Matchers::Equals(std::get<2>(*it)));
+            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            JsonParser::findKey(&stream, std::get<1>(*it));
+            CHECK_THAT(stream.readString(), Catch::Matchers::Equals(std::get<2>(*it)));
         }
     }
 }
@@ -109,9 +109,9 @@ SCENARIO("JsonParser::nextEntry", "[nextEntry]") {
     for(auto it = parse.begin(); it!=parse.end(); ++it) {
         INFO("json: " << it->first);
 
-        MockStringStream* stream = new MockStringStream(it->first);
-        JsonParser::nextEntry(stream);
-        CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(it->second));
+        MockStringStream stream = MockStringStream(it->first);
+        JsonParser::nextEntry(&stream);
+        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(it->second));
     }
 }
 
@@ -149,8 +149,8 @@ SCENARIO("JsonParser::exitCollections", "[exitCollections]") {
     for(auto it = parse.begin(); it!=parse.end(); ++it) {
         INFO("json: " << std::get<0>(*it));
 
-        MockStringStream* stream = new MockStringStream(std::get<0>(*it));
-        JsonParser::exitCollections(stream,std::get<1>(*it));
-        CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+        MockStringStream stream = MockStringStream(std::get<0>(*it));
+        JsonParser::exitCollections(&stream,std::get<1>(*it));
+        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
     }
 }
