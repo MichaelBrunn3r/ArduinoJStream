@@ -221,4 +221,26 @@ namespace JStream {
             }
         }
     }
+
+    void JsonParser::exitCollections(Stream* stream, size_t count) {
+        if(count<1) return;
+        
+        size_t nesting = count-1;
+        while(stream->available()) {
+            switch(stream->read()) {
+                case '[':
+                case '{':
+                    nesting++;
+                    break;
+                case ']':
+                case '}':
+                    if(nesting == 0) return;
+                    nesting--;
+                    break;
+                case '"':
+                    skipString(stream, true);
+                    break;
+            }
+        }
+    }
 }

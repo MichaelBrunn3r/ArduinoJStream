@@ -77,6 +77,7 @@ SCENARIO("JsonParser::skipUntilKey", "[skipUntilKey]") {
             {"\"", "thekey", ""},
             {"\"\"", "thekey", ""},
             {"thekey", "thekey", ""},
+            {"\"thekey\", suffix", "thekey", ""},
             {"{\"akey\":\"notakey\"}", "notakey", ""},
             {"{\"\\\"notakey\":}", "notakey", ""},
             {"{\"\\\"notakey\\\":\":}", "\\\"notakey", ""}
@@ -100,7 +101,9 @@ SCENARIO("JsonParser::nextEntry", "[nextEntry]") {
         {"[1,2,3] ,\"2\": 2", "\"2\": 2"},
         {"{\"1\": 1, \"2\": 2} ,\"2\": 2", "\"2\": 2"},
         {"}]}]}", "}]}]}"},
-        {"]]]}]", "]]]}]"}
+        {"]]]}]", "]]]}]"},
+        {"\"}\" ,2", "2"},
+        {"\"]\" ,2", "2"}
     };
 
     for(auto it = parse.begin(); it!=parse.end(); ++it) {
@@ -109,5 +112,45 @@ SCENARIO("JsonParser::nextEntry", "[nextEntry]") {
         MockStringStream* stream = new MockStringStream(it->first);
         JsonParser::nextEntry(stream);
         CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(it->second));
+    }
+}
+
+SCENARIO("JsonParser::exitCollections", "[exitCollections]") {
+    // Json | number of overlying collections to exit | resulting Json
+    std::vector<std::tuple<const char*, size_t, const char*>> parse = {
+        // One level
+        {"", 1, ""},
+        {"}", 1, ""},
+        {"]", 1, ""},
+        {"\"}\"} ,suffix", 1, " ,suffix"},
+        {"\"]\"} ,suffix", 1, " ,suffix"},
+        {"\"}\"] ,suffix", 1, " ,suffix"},
+        {"\"]\"] ,suffix", 1, " ,suffix"},
+        {",2,3,4,5,6] ,suffix", 1, " ,suffix"},
+        {",[1,2,3],[7,8,9]} ,suffix", 1, " ,suffix"},
+        {",{1,2,3},{7,8,9}} ,suffix", 1, " ,suffix"},
+        {",[1,2,3],[7,8,9]] ,suffix", 1, " ,suffix"},
+        {",{1,2,3},{7,8,9}] ,suffix", 1, " ,suffix"},
+
+        // Two levels
+        {"}}", 2, ""},
+        {"]]", 2, ""},
+        {"\"}\"}} ,suffix", 2, " ,suffix"},
+        {"\"]\"}} ,suffix", 2, " ,suffix"},
+        {"\"}\"]] ,suffix", 2, " ,suffix"},
+        {"\"]\"]] ,suffix", 2, " ,suffix"},
+        {",2,3,4,5,6]] ,suffix", 2, " ,suffix"},
+        {",[1,2,3],[7,8,9]}} ,suffix", 2, " ,suffix"},
+        {",{1,2,3},{7,8,9}}} ,suffix", 2, " ,suffix"},
+        {",[1,2,3],[7,8,9]]] ,suffix", 2, " ,suffix"},
+        {",{1,2,3},{7,8,9}]] ,suffix", 2, " ,suffix"},
+    };
+
+    for(auto it = parse.begin(); it!=parse.end(); ++it) {
+        INFO("json: " << std::get<0>(*it));
+
+        MockStringStream* stream = new MockStringStream(std::get<0>(*it));
+        JsonParser::exitCollections(stream,std::get<1>(*it));
+        CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
     }
 }

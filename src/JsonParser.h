@@ -28,5 +28,21 @@ namespace JStream {
              * closing '}' or ']'.
              */
             static void nextEntry(Stream* stream);
+            /**
+             * @brief Exits the current object/array
+             * 
+             * WARNING: The current char can not be inside a String !!!
+             */
+            static inline void exitCollection(Stream* stream) {
+                exitCollections(stream, 1);
+            }
+            /**
+             * @brief Exits a specified number of overlying objects/arrays
+             * 
+             * WARNING: The current char can not be inside a String !!!
+             * 
+             * @param count The number of overlying objects/arrays to exit. Must be >0
+             */
+            static void exitCollections(Stream* stream, size_t count=1);
     };
 }
