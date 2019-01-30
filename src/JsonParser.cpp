@@ -106,6 +106,13 @@ namespace JStream {
         #undef peek
     }
 
+    void JsonParser::skipWhitespace(Stream* stream) {
+        while(stream->available()) {
+            if(isWhitespace(stream->peek())) stream->read();
+            else break;
+        }
+    }
+
     void JsonParser::skipString(Stream* stream, bool insideString) {
         if(!insideString) {
             while(stream->available()) {

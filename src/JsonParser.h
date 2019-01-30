@@ -9,6 +9,7 @@ namespace JStream {
         public:
             static void parseIntArray(std::vector<int>* vec, const char* json, size_t length);
             static void parseIntArray(std::vector<int>* vec, Stream* stream);
+            static void skipWhitespace(Stream* stream);
             /**
              * @brief Skips until after the next occuring String in a Stream
              * 
