@@ -9,7 +9,24 @@ namespace JStream {
         public:
             static void parseIntArray(std::vector<int>* vec, const char* json, size_t length);
             static void parseIntArray(std::vector<int>* vec, Stream* stream);
+            /**
+             * @brief Skips until after the next occuring String in a Stream
+             * 
+             * @param insideString Indicates if this method should skip over a String or exit the current one
+             */
+            static void skipString(Stream* stream, bool insideString = false);
             static const char* skipUntilKey(const char* json, const char* key);
             static void skipUntilKey(Stream* stream, const char* key);
+            /** 
+             * @brief Skips to the next key/value in the current object/array
+             * 
+             * WARNING: The current char can not be inside a String !!!
+             * 
+             * This method reads the stream until it discovers the next entry, 
+             * which must be preceded by a ',' and is in the same nesting. It doesn't
+             * exit the current object/array, therefore it will terminate at the
+             * closing '}' or ']'.
+             */
+            static void nextEntry(Stream* stream);
     };
 }

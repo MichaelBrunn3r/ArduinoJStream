@@ -12,7 +12,43 @@
 
 using namespace JStream;
 
-SCENARIO("Method 'skipUntilKey'", "[skipUntilKey]") {
+SCENARIO("JsonParser::skipString") {
+    GIVEN("Outside String") {
+        std::vector<std::pair<const char*, const char*>> parse = {
+            {"\"astring\"", ""},
+            {"\"astring\" suffix", " suffix"},
+            {"prefix \"astring\" suffix", " suffix"},
+            {"prefix \"\\\"astring\" suffix", " suffix"}
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            INFO("json: " << it->first);
+
+            MockStringStream* stream = new MockStringStream(it->first);
+            JsonParser::skipString(stream, false);
+            CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(it->second));
+        }
+    }
+
+    GIVEN("Inside String") {
+        std::vector<std::pair<const char*, const char*>> parse = {
+            {"astring\"", ""},
+            {"astring\" suffix", " suffix"},
+            {"\\\"astring\" suffix", " suffix"},
+            {"a\\\"string\" suffix", " suffix"}
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            INFO("json: " << it->first);
+
+            MockStringStream* stream = new MockStringStream(it->first);
+            JsonParser::skipString(stream, true);
+            CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(it->second));
+        }
+    }
+}
+
+SCENARIO("JsonParser::skipUntilKey", "[skipUntilKey]") {
     GIVEN("Json with matching key") {
         /** Json | key | resulting Json **/
         std::vector<std::tuple<const char*, const char*, const char*>> parse = {
@@ -54,5 +90,24 @@ SCENARIO("Method 'skipUntilKey'", "[skipUntilKey]") {
             JsonParser::skipUntilKey(stream, std::get<1>(*it));
             CHECK_THAT(stream->readString(), Catch::Matchers::Equals(std::get<2>(*it)));
         }
+    }
+}
+
+SCENARIO("JsonParser::nextEntry", "[nextEntry]") {
+    std::vector<std::pair<const char*, const char*>> parse = {
+        {",\"2\": 2", "\"2\": 2"},
+        {"\"avalue\" ,\"2\": 2", "\"2\": 2"},
+        {"[1,2,3] ,\"2\": 2", "\"2\": 2"},
+        {"{\"1\": 1, \"2\": 2} ,\"2\": 2", "\"2\": 2"},
+        {"}]}]}", "}]}]}"},
+        {"]]]}]", "]]]}]"}
+    };
+
+    for(auto it = parse.begin(); it!=parse.end(); ++it) {
+        INFO("json: " << it->first);
+
+        MockStringStream* stream = new MockStringStream(it->first);
+        JsonParser::nextEntry(stream);
+        CHECK_THAT(stream->readString().c_str(), Catch::Matchers::Equals(it->second));
     }
 }

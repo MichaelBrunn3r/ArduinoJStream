@@ -106,6 +106,22 @@ namespace JStream {
         #undef peek
     }
 
+    void JsonParser::skipString(Stream* stream, bool insideString) {
+        if(!insideString) {
+            while(stream->available()) {
+                if(stream->read() == '"') break;
+            }
+        }
+
+        bool escaped = false;
+        while(stream->available()) {
+            char c = stream->read();
+            if(c == '\\') escaped = true;
+            else if(!escaped && c == '"') break;
+            else escaped = false;
+        }
+    }
+
     const char* JsonParser::skipUntilKey(const char* json, const char* key) {
         #define hasNext() (*json)
         #define peek() (*json)
@@ -169,17 +185,40 @@ namespace JStream {
                     } else break;
                 }
 
-                // Couldn't match key. Skip until the end of the current key
-                bool escaped = false;
-                while(stream->available()) {
-                    char c = stream->read();
-                    if(c == '\\') escaped = true;
-                    else if(!escaped && c == '"') break;
-                    else escaped = false;
-                }
+                // Couldn't match key. Skip until the current key
+                skipString(stream, true);
             }
         }
         EXIT_LOOP:
         return;
+    }
+
+    void JsonParser::nextEntry(Stream* stream) {
+        size_t nesting = 0;
+
+        while(stream->available()) {
+            switch(stream->peek()) {
+                case '[':
+                case '{':
+                    stream->read();
+                    nesting++;
+                    break;
+                case ']':
+                case '}':
+                    if(nesting == 0) return;
+                    stream->read();
+                    nesting--;
+                    break;
+                case '"':
+                    skipString(stream, false);
+                    break;
+                case ',':
+                    stream->read();
+                    if(nesting == 0) return;
+                    break;
+                default:
+                    stream->read();
+            }
+        }
     }
 }
