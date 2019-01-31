@@ -13,8 +13,9 @@ class MockStringStream : public Stream {
         int peek();
         size_t readBytes(char* buf, const int length);
         size_t readBytes(byte* buf, const int length);
+        String peekString();
         size_t write(uint8_t);
-        
+
     private:
         const char* str;
 

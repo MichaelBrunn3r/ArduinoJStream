@@ -41,6 +41,10 @@ size_t MockStringStream::readBytes(byte* buf, const int length) {
     return read;
 }
 
+String MockStringStream::peekString() {
+    return String(str);
+}
+
 size_t MockStringStream::write(uint8_t) {
     return 1;
 }
