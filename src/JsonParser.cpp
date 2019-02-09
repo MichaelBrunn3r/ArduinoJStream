@@ -41,42 +41,52 @@ namespace JStream {
     }
 
     bool JsonParser::findKey(const char*& thekey) {
+        NEXT_KEY:
         while(stream->available()) {
-            if(next()) {
-                if(stream->peek() == '"') { // Enter string
+            // Check if next key exists
+            if(!next()) break;
+            if(stream->peek() != '"') continue; // no string -> no key -> try matching next key
+
+            stream->read(); // Read opening '"'  
+
+            // Match key and thekey by comparing each char
+            const char* thekey_idx = thekey;
+            while(stream->available() && *thekey_idx != 0) {
+                char c = stream->peek();
+
+                // Escape char
+                bool escaped = false;
+                if(c == '\\' && stream->available()) {
                     stream->read();
-
-                    // Match thekey with string
-                    const char* thekey_idx = thekey;
-                    while(stream->available() && *thekey) {
-                        if(stream->peek() == *thekey_idx) { // string[idx] == key[idx] -> matched char
-                            thekey_idx++;
-                            stream->read();
-                        } else break;
-                    }
-
-                    if(*thekey_idx == 0) { // Reached end of thekey -> matched thekey
-                        if(stream->peek() == '"') { // String ended and matches thekey
-                            stream->read();
-                            skipWhitespace(); // Whitespace between string and ':' (e.g. "'key'  :123")
-                            if(stream->peek() == ':') {
-                                stream->read();
-                                skipWhitespace(); // Whitespace before value (e.g "'key':   123")
-                                return true;
-                            } else {
-                                /** The matched string was not followd by a ':', therefore it is not a valid json key.
-                                 *  This error can only occur, when the key is malformed, or the stream is currently
-                                 *  in an array.
-                                 *  -> Skip to the next key-value pair
-                                 */
-                                continue;
-                            }
-                        } // string doesn't end here -> thekey is prefix of string -> no match
-                    } 
-
-                    exitString();
+                    c = JStream::escape(stream->peek());
+                    escaped = true;
                 }
-            } else break;
+
+                // Match key[idx] with thekey[idx]
+                if(c != *thekey_idx) { // key[idx] != thekey[idx] -> key doesn't match thekey
+                    exitString(escaped);
+                    goto NEXT_KEY;
+                }
+
+                // Advance to next char
+                thekey_idx++;
+                stream->read();
+            }
+
+            // Check if matching was sucessful
+            if(!(*thekey_idx == 0 && stream->peek() == '"')) { // thekey and key have different length -> one is prefix of the other -> no match
+                exitString();
+                continue; // try matching next key
+            } else stream->read(); // Read closing '"'
+
+            skipWhitespace(); // Whitespace between key and ':'
+
+            if(stream->peek() != ':') continue; // The matched string was not followd by a ':', therefore it is not a valid json key -> try matching next key
+            else stream->read();
+
+            skipWhitespace(); // Whitespace before value (e.g "'key':   123")
+
+            return true;
         }
         return false;
     } 
@@ -109,73 +119,6 @@ namespace JStream {
         }
 
         return false;
-    }
-
-    template<>
-    void JsonParser::asArray<long>(std::vector<long>& vec) {
-        skipWhitespace();
-        if(stream->peek() != '[') return;
-        else stream->read();
-
-        #define buf_capacity 16
-        char buf[buf_capacity];
-        size_t buf_len = buf_capacity;
-        char* buf_it = buf;
-        char* buf_end = buf;
-
-        #define hasNext() (buf_it<buf_end)
-        #define read() (*buf_it++)
-        #define peek() (*buf_it)
-
-        long num = 0;
-        int sign = 1;
-
-        while(true) {   
-            if(buf_it == buf_end) {
-                if(buf_len < buf_capacity) {
-                    vec.push_back(num*sign);
-                    break;
-                }
-
-                buf_len = stream->readBytesUntil(']', (char*) buf, buf_capacity);
-
-                if(buf_len == 0) {
-                    vec.push_back(num*sign);
-                    break;
-                }
-
-                buf_it = buf;
-                buf_end = buf+buf_len;
-
-                if(peek() == '-') {
-                    sign = -1;
-                    read();
-                }
-            }
-            
-            if(hasNext() && peek() == ',') {
-                read();
-                vec.push_back(num*sign);
-                
-                num = 0;
-
-                if(hasNext() && peek() == '-') {
-                    sign = -1;
-                    read();
-                } else {
-                    sign = 1;
-                }
-            }
-
-            while(hasNext() && JStream::isDecDigit(peek())) {
-                num = num*10 + read() - '0';
-            }
-        }
-        
-        #undef buf_capacity
-        #undef hasNext
-        #undef next
-        #undef peek
     }
 
     /////////////
@@ -233,8 +176,8 @@ namespace JStream {
         }
     }
 
-    void JsonParser::exitString() {
-        bool escaped = false;
+    void JsonParser::exitString(bool isEscaped) {
+        bool escaped = isEscaped;
         while(stream->available()) {
             char c = stream->read();
             if(c == '\\') escaped = true;

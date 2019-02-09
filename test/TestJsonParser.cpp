@@ -152,12 +152,10 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             {",\"thekey\"  : 123}", "thekey", "123}"},
             {",   \"thekey\"    :    123  }  ", "thekey", "123  }  "},
 
-            {",\"\\\"thekey\" :321}", "\\\"thekey", "321}"},
-            {",\"numbers\": [1,2,3,4,5],\"thekey\": \"thevalue\"}", "thekey", "\"thevalue\"}"},
-
             // Skip matching key nested objects/arrays
             {", \"1\": {\"thekey\": 123}, \"thekey\": 321}", "thekey", "321}"},
             {", \"1\": [\"thekey\"], \"thekey\": 321}", "thekey", "321}"},
+            {", \"numbers\": [1,2,3,4,5],\"thekey\": \"thevalue\"}", "thekey", "\"thevalue\"}"},
 
             // Skip empty key-value pairs
             {",, \"thekey\": 1", "thekey", "1"},
@@ -167,15 +165,33 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             // Skip malformed keys
             {",\"thekey\" 1, \"thekey\": 2}", "thekey", "2}"},
             {"\"thekey\" 1, \"thekey\": 2}", "thekey", "2}"},
+
+            // Don't match prefix
+            {",\"the\": 1, \"thekey\": 2}", "thekey", "2}"},
+            {",\"thekey\": 1, \"thekeylong\": 2}", "thekeylong", "2}"},
+
+            // Skip over short keys
+            {",\"the\": 1, \"thekey\": 2}", "thekey", "2}"},
+
+            // Match escaped chars
+            {", \"\\\\thekey\" :321}", "\\thekey", "321}"},
+            {", \"\\\\\"thekey\" :321}", "\\\"thekey", "321}"},
+            {", \"\\\"thekey\" :321}", "\"thekey", "321}"},
+            {", \"\\nthekey\" :321}", "\nthekey", "321}"}
         };
         
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            INFO("json: " << std::get<0>(*it));           
+            const char* json = std::get<0>(*it);
+            const char* thekey = std::get<1>(*it);
 
-            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            INFO("json: " << json);        
+            INFO("key: " << thekey);   
+
+            MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            REQUIRE(parser.findKey(std::get<1>(*it)));
+            bool success = parser.findKey(thekey);
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            REQUIRE(success);
         }
     }
 
@@ -189,21 +205,34 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             {"thekey", "thekey", ""},
             {",\"thekey\", suffix", "thekey", ""},
             {",\"akey\":\"notakey\"}", "notakey", "}"},
-            {",\"\\\"notakey\":}", "notakey", "}"},
-            {",\"\\\"notakey\\\":\":}", "\\\"notakey", "}"},
+            
 
             // Skip matching key in nested object/array
             {", \"1\": {\"thekey\": 123}}", "thekey", "}"},
-            {", \"1\": [\"thekey\"]}", "thekey", "}"}
+            {", \"1\": [\"thekey\"]}", "thekey", "}"},
+
+            // Don't match prefixes
+            {",\"thekey123\": 1}", "thekey", "}"},
+
+            // Escaped chars
+            {",\"\\akey\":}", "thekey", "}"},
+            {",\"\\\"akey\":}", "thekey", "}"},
+            {",\"thekey\\\":\": 1}", "thekey\\", "}"},
+            {",\"\\\"thekey\\\":\":}", "\\\"thekey", "}"}
         };
         
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            INFO("json: " << std::get<0>(*it));
+            const char* json = std::get<0>(*it);
+            const char* thekey = std::get<1>(*it);
 
-            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            INFO("json: " << json);
+            INFO("key: " << thekey);
+
+            MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            REQUIRE_FALSE(parser.findKey(std::get<1>(*it)));
+            bool success = parser.findKey(thekey);
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            REQUIRE_FALSE(success);
         }
     }
 }

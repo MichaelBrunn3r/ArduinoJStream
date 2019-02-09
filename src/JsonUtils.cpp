@@ -3,9 +3,11 @@
 namespace JStream {
     char escape(const char c) {
         switch(c) {
-            // case '"': return '"';
-            // case '\\': return '\\';
-            // case '/': return '\/';
+            // chars that stay unchanged
+            /** case '"': return '"';
+             *  case '\\': return '\\';
+             *  case '/': return '/'; 
+             **/
 
             // sorted by suspected frequency
             case 'n': return '\n';

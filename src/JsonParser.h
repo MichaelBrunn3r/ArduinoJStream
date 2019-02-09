@@ -64,8 +64,10 @@ namespace JStream {
              * @brief Reads the stream until coming across the closing '"' 
              * 
              * Assumes the opening '"' was already read
+             * 
+             * @param isEscaped Indicates that the previous char is a '\'
              **/
-            void exitString();
+            void exitString(bool isEscaped = false);
             /**
              * @brief Reads a string from the stream until coming across the closing '"'
              * 
