@@ -7,43 +7,70 @@
 namespace JStream {
     class JsonParser {
         public:
-            static void parseIntArray(std::vector<int>* vec, const char* json, size_t length);
-            static void parseIntArray(std::vector<int>* vec, Stream* stream);
-            static void skipWhitespace(Stream* stream);
+            JsonParser();
+            JsonParser(Stream* stream);
+
+            void parse(Stream* stream);
             /**
-             * @brief Skips until after the next occuring String in a Stream
-             * 
-             * @param insideString Indicates if this method should skip over a String or exit the current one
+             * @brief Returns true if the stream is at the closing '}'/']' of the current json array/object
              */
-            static void skipString(Stream* stream, bool insideString = false);
-            static const char* findKey(const char* json, const char* key);
-            static void findKey(Stream* stream, const char* key);
+            bool atEnd();
+            /**
+             * @brief Reads the stream until the start of the next array value
+             * 
+             * This method stops reading at the first char of the value (e.g. stops at 1 -> "...,    1337]").
+             * If it comes across the closing ']' of the current array, no next value exists and it stops reading.
+             */
+            bool nextVal();
+            /**
+             * @brief Like 'next()', but reads and returns the next key in the current object
+             * 
+             * This method stops reading at the first char of the value (e.g. stops at 1 -> "..., 'akey':  1337]").
+             * If it comes across the closing '}' of the current object, it stops reading, since no next value exists.
+             * 
+             * @return String The name of the next key. Empty String (i.e. "") if no next key exists
+             */
+            String nextKey();
+            /**
+             * @brief Reads the stream until it finds the searched key in the current object
+             * 
+             * This method stops reading at the first char of the value (e.g. stops at 1 -> "..., 'akey':  1337]").
+             * If it comes across the closing '}' of the current object, the key couldn't be found, and it stops reading.
+             * Skips over empty key-value pairs (e.g. "{'1': 1,, '2'; 2}") and malformed keys (e.g. "{'1': 1, 'notakey' 2}" or "{'1': 1, 2, '3': 3}").
+             * 
+             * @return true If the key was found in the current object
+             * @return false If the key couldn't be found in the current object or the stream ended
+             */
+            bool findKey(const char*& thekey);
+            bool ascend(size_t levels=1);
+
+            template <typename T>
+            void asArray(std::vector<T>& vec);
+        private:
+            Stream* stream;
+
+            /**
+             * @brief Reads the stream until the start of the next key/value in the current object/array
+             * 
+             * This method stops reading at the first char of the key/value (keys allways begin with '"').
+             * If it comes across the closing '}'/']' of the current object/array, it stops reading, since no next key/value exists.
+             * 
+             * @return true if a next key/value was found
+             * @return false otherwise
+             */
+            bool next();
+            void skipWhitespace();
             /** 
-             * @brief Skips to the next key/value in the current object/array
+             * @brief Reads the stream until coming across the closing '"' 
              * 
-             * WARNING: The current char can not be inside a String !!!
-             * 
-             * This method reads the stream until it discovers the next entry, 
-             * which must be preceded by a ',' and is in the same nesting. It doesn't
-             * exit the current object/array, therefore it will terminate at the
-             * closing '}' or ']'.
-             */
-            static void nextEntry(Stream* stream);
+             * Assumes the opening '"' was already read
+             **/
+            void exitString();
             /**
-             * @brief Exits the current object/array
+             * @brief Reads a string from the stream until coming across the closing '"'
              * 
-             * WARNING: The current char can not be inside a String !!!
+             * Assumes the opening '"' was already read
              */
-            static inline void exitCollection(Stream* stream) {
-                exitCollections(stream, 1);
-            }
-            /**
-             * @brief Exits a specified number of overlying objects/arrays
-             * 
-             * WARNING: The current char can not be inside a String !!!
-             * 
-             * @param count The number of overlying objects/arrays to exit. Must be >0
-             */
-            static void exitCollections(Stream* stream, size_t count=1);
+            String readString();
     };
 }

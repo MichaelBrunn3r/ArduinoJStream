@@ -3,56 +3,128 @@
 #include <cstring>
 
 namespace JStream {
-    void JsonParser::parseIntArray(std::vector<int>* vec, const char* json, size_t length) {
-        const char* end = json+length;
-        #define hasNext() (json < end)
-        #define peek() *json
-        #define next() *json++
+    JsonParser::JsonParser() {}
+    JsonParser::JsonParser(Stream* stream) : stream(stream) {}
 
-        if(!hasNext() || peek() != '[') return;
-        else next();
-
-        int sign;
-        int num;
-        bool firstNumber = true;
-        while(hasNext()) {
-            if(peek() == ',') {
-                next();
-            } else if(peek() == ']') {
-                next();
-                return;
-            } else if(!firstNumber) return;
-
-            sign = 1;
-            num = 0;
-            if(hasNext() && peek() == '-') {
-                next();
-                sign = -1;
-            }
-
-            while(hasNext() && JStream::isDecDigit(peek())) {
-                num = num*10 + next() - '0';
-            }
-            vec->push_back(sign*num);
-        }
-
-        #undef hasNext
-        #undef peek
-        #undef next
+    void JsonParser::parse(Stream* stream) {
+        this->stream = stream;
     }
 
-    void JsonParser::parseIntArray(std::vector<int>* vec, Stream* stream) {
+    bool JsonParser::atEnd() {
+        skipWhitespace();
+
+        if(stream->available()) {
+            char c = stream->peek();
+            return c != '}' && c != ']';
+        } else return false;
+    }
+
+    bool JsonParser::nextVal() {
+        return next();
+    }
+
+    String JsonParser::nextKey() {
+        if(next()) {
+            skipWhitespace();
+            if(stream->peek() == '"') {
+                stream->read();
+                String str = readString();
+                skipWhitespace();
+                if(stream->peek() == ':') {
+                    stream->read();
+                    skipWhitespace();
+                    return str;
+                }
+            }
+        } 
+        return "";
+    }
+
+    bool JsonParser::findKey(const char*& thekey) {
+        while(stream->available()) {
+            if(next()) {
+                if(stream->peek() == '"') { // Enter string
+                    stream->read();
+
+                    // Match thekey with string
+                    const char* thekey_idx = thekey;
+                    while(stream->available() && *thekey) {
+                        if(stream->peek() == *thekey_idx) { // string[idx] == key[idx] -> matched char
+                            thekey_idx++;
+                            stream->read();
+                        } else break;
+                    }
+
+                    if(*thekey_idx == 0) { // Reached end of thekey -> matched thekey
+                        if(stream->peek() == '"') { // String ended and matches thekey
+                            stream->read();
+                            skipWhitespace(); // Whitespace between string and ':' (e.g. "'key'  :123")
+                            if(stream->peek() == ':') {
+                                stream->read();
+                                skipWhitespace(); // Whitespace before value (e.g "'key':   123")
+                                return true;
+                            } else {
+                                /** The matched string was not followd by a ':', therefore it is not a valid json key.
+                                 *  This error can only occur, when the key is malformed, or the stream is currently
+                                 *  in an array.
+                                 *  -> Skip to the next key-value pair
+                                 */
+                                continue;
+                            }
+                        } // string doesn't end here -> thekey is prefix of string -> no match
+                    } 
+
+                    exitString();
+                }
+            } else break;
+        }
+        return false;
+    } 
+    
+    bool JsonParser::ascend(size_t levels) {
+        if(levels == 0) return true;
+
+        while(stream->available()) {
+            switch(stream->peek()) {
+                case '{':
+                case '[':
+                    // Start of a nested object
+                    stream->read();
+                    levels++;
+                    break;
+                case '}':
+                case ']':
+                    stream->read();
+                    if(levels == 1) return true; // End of current object/array, no next key/value
+                    else levels--; // End of a nested object
+                    break;
+                case '"':
+                    // Skip String
+                    stream->read(); // Enter String
+                    exitString(); // Exit String
+                    break;
+                default:
+                    stream->read();
+            }
+        }
+
+        return false;
+    }
+
+    template<>
+    void JsonParser::asArray<long>(std::vector<long>& vec) {
+        skipWhitespace();
         if(stream->peek() != '[') return;
         else stream->read();
 
-        #define buf_capacity 32
+        #define buf_capacity 16
         char buf[buf_capacity];
         size_t buf_len = buf_capacity;
         char* buf_it = buf;
         char* buf_end = buf;
 
         #define hasNext() (buf_it<buf_end)
-        #define next() (*buf_it++)
+        #define read() (*buf_it++)
         #define peek() (*buf_it)
 
         long num = 0;
@@ -61,14 +133,14 @@ namespace JStream {
         while(true) {   
             if(buf_it == buf_end) {
                 if(buf_len < buf_capacity) {
-                    vec->push_back(num*sign);
+                    vec.push_back(num*sign);
                     break;
                 }
 
                 buf_len = stream->readBytesUntil(']', (char*) buf, buf_capacity);
 
                 if(buf_len == 0) {
-                    vec->push_back(num*sign);
+                    vec.push_back(num*sign);
                     break;
                 }
 
@@ -77,26 +149,26 @@ namespace JStream {
 
                 if(peek() == '-') {
                     sign = -1;
-                    next();
+                    read();
                 }
             }
             
             if(hasNext() && peek() == ',') {
-                next();
-                vec->push_back(num*sign);
+                read();
+                vec.push_back(num*sign);
                 
                 num = 0;
 
                 if(hasNext() && peek() == '-') {
                     sign = -1;
-                    next();
+                    read();
                 } else {
                     sign = 1;
                 }
             }
 
             while(hasNext() && JStream::isDecDigit(peek())) {
-                num = num*10 + next() - '0';
+                num = num*10 + read() - '0';
             }
         }
         
@@ -106,20 +178,62 @@ namespace JStream {
         #undef peek
     }
 
-    void JsonParser::skipWhitespace(Stream* stream) {
+    /////////////
+    // Private //
+    /////////////
+
+    bool JsonParser::next() {
+        size_t nesting = 0;
+
+        while(stream->available()) {
+            switch(stream->peek()) {
+                case '{':
+                case '[':
+                    // Start of a nested object
+                    stream->read();
+                    nesting++;
+                    break;
+                case '}':
+                case ']':
+                    if(nesting == 0) {
+                        // End of current object/array, no next key/value
+                        return false;
+                    } else {
+                        // End of a nested object
+                        stream->read();
+                        nesting--;
+                    }
+                    break;
+                case '"':
+                    // Skip String
+                    stream->read(); // Enter String
+                    exitString(); // Exit String
+                    break;
+                case ',':
+                    stream->read();
+                    if(nesting == 0) {
+                        // Reached start of next key/value
+                        skipWhitespace();
+                        return true;
+                    }
+                    break;
+                default:
+                    stream->read();
+            }
+        }
+
+        // Stream ended, no next key/value
+        return false;
+    }
+
+    void JsonParser::skipWhitespace() {
         while(stream->available()) {
             if(isWhitespace(stream->peek())) stream->read();
             else break;
         }
     }
 
-    void JsonParser::skipString(Stream* stream, bool insideString) {
-        if(!insideString) {
-            while(stream->available()) {
-                if(stream->read() == '"') break;
-            }
-        }
-
+    void JsonParser::exitString() {
         bool escaped = false;
         while(stream->available()) {
             char c = stream->read();
@@ -129,125 +243,17 @@ namespace JStream {
         }
     }
 
-    const char* JsonParser::findKey(const char* json, const char* key) {
-        #define hasNext() (*json)
-        #define peek() (*json)
-        #define next() (*json++)
-
-        if(!*json || !*key) return json;
-        
-        while(hasNext()) {
-            if(next() == '"') {
-                // Match key
-                const char* key_idx = key;
-                while(hasNext()) {
-                    if(peek() == *key_idx) {
-                        key_idx++;
-                        next();
-                        if(!*key_idx) { // Reached string terminator -> matched key
-                            if(!*key_idx && next() == '"' && peek() == ':') {
-                                next();
-                                goto EXIT_LOOP;
-                            } 
-                        } 
-                    } else break;
-                }
-
-                // Couldn't match key. Skip until the end of the current key
-                bool escaped = false;
-                while(hasNext()) {
-                    char c = next();
-                    if(c == '\\') escaped = true;
-                    else if(!escaped && c == '"') break;
-                    else escaped = false;
-                }
-            }
-        }
-        EXIT_LOOP:
-        return json;
-
-        #undef hasNext
-        #undef peek
-        #undef next
-    }
-
-    void JsonParser::findKey(Stream* stream, const char* key) {
-
-        if(!*key) return;
-        
+    String JsonParser::readString() {
+        String str = "";
+        bool escaped = false;
         while(stream->available()) {
-            if(stream->read() == '"') {
-                // Match key
-                const char* key_idx = key;
-                while(stream->available()) {
-                    if(stream->peek() == *key_idx) {
-                        key_idx++;
-                        stream->read();
-                        if(!*key_idx) { // Reached string terminator -> matched key
-                            if(!*key_idx && stream->read() == '"' && stream->peek() == ':') {
-                                stream->read();
-                                goto EXIT_LOOP;
-                            } 
-                        } 
-                    } else break;
-                }
+            char c = stream->read();
+            if(c == '\\') escaped = true;
+            else if(!escaped && c == '"') break;
+            else escaped = false;
 
-                // Couldn't match key. Skip until the current key
-                skipString(stream, true);
-            }
+            str += c;
         }
-        EXIT_LOOP:
-        return;
-    }
-
-    void JsonParser::nextEntry(Stream* stream) {
-        size_t nesting = 0;
-
-        while(stream->available()) {
-            switch(stream->peek()) {
-                case '[':
-                case '{':
-                    stream->read();
-                    nesting++;
-                    break;
-                case ']':
-                case '}':
-                    if(nesting == 0) return;
-                    stream->read();
-                    nesting--;
-                    break;
-                case '"':
-                    skipString(stream, false);
-                    break;
-                case ',':
-                    stream->read();
-                    if(nesting == 0) return;
-                    break;
-                default:
-                    stream->read();
-            }
-        }
-    }
-
-    void JsonParser::exitCollections(Stream* stream, size_t count) {
-        if(count<1) return;
-
-        size_t nesting = count-1;
-        while(stream->available()) {
-            switch(stream->read()) {
-                case '[':
-                case '{':
-                    nesting++;
-                    break;
-                case ']':
-                case '}':
-                    if(nesting == 0) return;
-                    nesting--;
-                    break;
-                case '"':
-                    skipString(stream, true);
-                    break;
-            }
-        }
+        return str;
     }
 }

@@ -12,145 +12,262 @@
 
 using namespace JStream;
 
-SCENARIO("JsonParser::skipString") {
-    GIVEN("Outside String") {
-        std::vector<std::pair<const char*, const char*>> parse = {
-            {"\"astring\"", ""},
-            {"\"astring\" suffix", " suffix"},
-            {"prefix \"astring\" suffix", " suffix"},
-            {"prefix \"\\\"astring\" suffix", " suffix"}
+SCENARIO("JsonParser::atEnd", "[atEnd]") {
+    JsonParser parser;
+
+    GIVEN("Json not at the end of the current object/array") {
+        std::vector<std::pair<const char*, const char*>> parse = {         
+            // Skip whitespace in Arrays
+            {",1]", ",1]"},
+            {" ,1]", ",1]"},
+            {", 1]", ", 1]"},
+            {" , 1 ]", ", 1 ]"},
+            {" 1]", "1]"},
+
+            // Skip whitespace in Objects
+            {",\"akey\": 1}", ",\"akey\": 1}"},
+            {" ,\"akey\": 1}", ",\"akey\": 1}"},
+            {", \"akey\": 1}", ", \"akey\": 1}"},
+            {" , \"akey\" : 1}", ", \"akey\" : 1}"},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             INFO("json: " << it->first);
 
             MockStringStream stream = MockStringStream(it->first);
-            JsonParser::skipString(&stream, false);
+            parser.parse(&stream);
+            REQUIRE(parser.atEnd());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(it->second));
         }
     }
-
-    GIVEN("Inside String") {
+    
+    GIVEN("Json at the end of the current object/array") {
         std::vector<std::pair<const char*, const char*>> parse = {
-            {"astring\"", ""},
-            {"astring\" suffix", " suffix"},
-            {"\\\"astring\" suffix", " suffix"},
-            {"a\\\"string\" suffix", " suffix"}
+            {"", ""},
+            {" ", ""},
+            {"}", "}"},
+            {"  }", "}"},
+            {"]", "]"},
+            {"  ]", "]"}
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             INFO("json: " << it->first);
 
             MockStringStream stream = MockStringStream(it->first);
-            JsonParser::skipString(&stream, true);
+            parser.parse(&stream);
+            REQUIRE_FALSE(parser.atEnd());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(it->second));
         }
     }
 }
 
-SCENARIO("JsonParser::findKey", "[findKey]") {
-    GIVEN("Json with matching key") {
-        /** Json | key | resulting Json **/
-        std::vector<std::tuple<const char*, const char*, const char*>> parse = {
-            {"\"thekey\":}", "thekey", "}"},
-            {"{\"thekey\":", "thekey", ""},
-            {"{\"thekey\":}", "thekey", "}"},
-            {"{\"\\\"thekey\":}", "\\\"thekey", "}"},
-            {"{\"numbers\": [1,2,3,4,5],\"thekey\": \"thevalue\"}", "thekey", " \"thevalue\"}"}
-        };
-        
-        for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            INFO("json: " << std::get<0>(*it));
-            CHECK_THAT(JsonParser::findKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
+SCENARIO("JsonParser::nextVal", "[nextVal]") {
+    JsonParser parser;
 
-            MockStringStream stream = MockStringStream(std::get<0>(*it));
-            JsonParser::findKey(&stream, std::get<1>(*it));
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
-        }
-    }
-
-    GIVEN("Json without matching key") {
-        /** Json | key | resulting Json **/
-        std::vector<std::tuple<const char*, const char*, const char*>> parse = {
-            {"", "thekey", ""},
-            {"", "", ""},
-            {"\"", "thekey", ""},
-            {"\"\"", "thekey", ""},
-            {"thekey", "thekey", ""},
-            {"\"thekey\", suffix", "thekey", ""},
-            {"{\"akey\":\"notakey\"}", "notakey", ""},
-            {"{\"\\\"notakey\":}", "notakey", ""},
-            {"{\"\\\"notakey\\\":\":}", "\\\"notakey", ""}
-        };
-        
-        for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            INFO("json: " << std::get<0>(*it));
-            CHECK_THAT(JsonParser::findKey(std::get<0>(*it), std::get<1>(*it)), Catch::Matchers::Equals(std::get<2>(*it)));
-
-            MockStringStream stream = MockStringStream(std::get<0>(*it));
-            JsonParser::findKey(&stream, std::get<1>(*it));
-            CHECK_THAT(stream.readString(), Catch::Matchers::Equals(std::get<2>(*it)));
-        }
-    }
-}
-
-SCENARIO("JsonParser::nextEntry", "[nextEntry]") {
     std::vector<std::pair<const char*, const char*>> parse = {
-        {",\"2\": 2", "\"2\": 2"},
-        {"\"avalue\" ,\"2\": 2", "\"2\": 2"},
-        {"[1,2,3] ,\"2\": 2", "\"2\": 2"},
-        {"{\"1\": 1, \"2\": 2} ,\"2\": 2", "\"2\": 2"},
-        {"}]}]}", "}]}]}"},
-        {"]]]}]", "]]]}]"},
-        {"\"}\" ,2", "2"},
-        {"\"]\" ,2", "2"}
+        {",1,2]", "1,2]"},
+        {"1,2]", "2]"},
+        {"1, 2]", "2]"},
+        {"1, 2", "2"},
+
+        {"[1,2,3], 2]", "2]"},
+        {"{\"1\": 1}, 2]", "2]"}
     };
 
     for(auto it = parse.begin(); it!=parse.end(); ++it) {
         INFO("json: " << it->first);
 
         MockStringStream stream = MockStringStream(it->first);
-        JsonParser::nextEntry(&stream);
+        parser.parse(&stream);
+        REQUIRE(parser.nextVal());
         CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(it->second));
     }
 }
 
-SCENARIO("JsonParser::exitCollections", "[exitCollections]") {
-    // Json | number of overlying collections to exit | resulting Json
-    std::vector<std::tuple<const char*, size_t, const char*>> parse = {
-        // One level
-        {"", 1, ""},
-        {"}", 1, ""},
-        {"]", 1, ""},
-        {"\"}\"} ,suffix", 1, " ,suffix"},
-        {"\"]\"} ,suffix", 1, " ,suffix"},
-        {"\"}\"] ,suffix", 1, " ,suffix"},
-        {"\"]\"] ,suffix", 1, " ,suffix"},
-        {",2,3,4,5,6] ,suffix", 1, " ,suffix"},
-        {",[1,2,3],[7,8,9]} ,suffix", 1, " ,suffix"},
-        {",{1,2,3},{7,8,9}} ,suffix", 1, " ,suffix"},
-        {",[1,2,3],[7,8,9]] ,suffix", 1, " ,suffix"},
-        {",{1,2,3},{7,8,9}] ,suffix", 1, " ,suffix"},
+SCENARIO("JsonParser::nextKey", "[nextKey]") {
+    JsonParser parser;
 
-        // Two levels
-        {"}}", 2, ""},
-        {"]]", 2, ""},
-        {"\"}\"}} ,suffix", 2, " ,suffix"},
-        {"\"]\"}} ,suffix", 2, " ,suffix"},
-        {"\"}\"]] ,suffix", 2, " ,suffix"},
-        {"\"]\"]] ,suffix", 2, " ,suffix"},
-        {",2,3,4,5,6]] ,suffix", 2, " ,suffix"},
-        {",[1,2,3],[7,8,9]}} ,suffix", 2, " ,suffix"},
-        {",{1,2,3},{7,8,9}}} ,suffix", 2, " ,suffix"},
-        {",[1,2,3],[7,8,9]]] ,suffix", 2, " ,suffix"},
-        {",{1,2,3},{7,8,9}]] ,suffix", 2, " ,suffix"},
-    };
+    GIVEN("Next Key exists") {
+        // Json string | result of 'nextKey' | resulting Json string
+        std::vector<std::tuple<const char*, const char*, const char*>> parse = {
+            {",\"akey\": 123}", "akey", "123}"},
 
-    for(auto it = parse.begin(); it!=parse.end(); ++it) {
-        INFO("json: " << std::get<0>(*it));
+            {",\"\\\"akey\\\": 123\": 123}", "\\\"akey\\\": 123", "123}"}
+        };
 
-        MockStringStream stream = MockStringStream(std::get<0>(*it));
-        JsonParser::exitCollections(&stream,std::get<1>(*it));
-        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            INFO("json: " << std::get<0>(*it));
+
+            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            parser.parse(&stream);
+
+            String result = parser.nextKey();
+            INFO("result: " << result);
+            REQUIRE(result.equals(std::get<1>(*it)));
+
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+        }
+    }
+
+    GIVEN("No next Key exists") {
+        // Json string | result of 'nextKey' | resulting Json string
+        std::vector<std::tuple<const char*, const char*, const char*>> parse = {
+            {"", "", ""},
+            {"123", "", ""},
+
+            // Stops at end of object/array
+            {"123}123", "", "}123"}, // Stops at }
+            {"123]123", "", "]123"}, // Stops at ]
+
+            // Malformed key
+            {",\"akey\" 123}", "", "123}"},
+            {"\"akey\" 123}", "", "}"},
+
+            // Inside last key of object
+            {"\"akey\": 123}", "", "}"},
+
+            {", 1, 2, 3]", "", "1, 2, 3]"},
+            {", 1, 2, 3}", "", "1, 2, 3}"}
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            INFO("json: " << std::get<0>(*it));
+
+            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            parser.parse(&stream);
+            REQUIRE(parser.nextKey().equals(std::get<1>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+        }
+    }
+}
+
+SCENARIO("JsonParser::findKey", "[findKey]") {
+    JsonParser parser;
+    GIVEN("Json with matching key") {
+        // Json | key | resulting Json
+        std::vector<std::tuple<const char*, const char*, const char*>> parse = {
+            // Test Whitespaces
+            {",\"thekey\": 123}", "thekey", "123}"},
+            {",\"thekey\"  : 123}", "thekey", "123}"},
+            {",   \"thekey\"    :    123  }  ", "thekey", "123  }  "},
+
+            {",\"\\\"thekey\" :321}", "\\\"thekey", "321}"},
+            {",\"numbers\": [1,2,3,4,5],\"thekey\": \"thevalue\"}", "thekey", "\"thevalue\"}"},
+
+            // Skip matching key nested objects/arrays
+            {", \"1\": {\"thekey\": 123}, \"thekey\": 321}", "thekey", "321}"},
+            {", \"1\": [\"thekey\"], \"thekey\": 321}", "thekey", "321}"},
+
+            // Skip empty key-value pairs
+            {",, \"thekey\": 1", "thekey", "1"},
+            {", , \"thekey\": 1", "thekey", "1"},
+            {",\"1\": 1 ,, \"thekey\": 1", "thekey", "1"},
+
+            // Skip malformed keys
+            {",\"thekey\" 1, \"thekey\": 2}", "thekey", "2}"},
+            {"\"thekey\" 1, \"thekey\": 2}", "thekey", "2}"},
+        };
+        
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            INFO("json: " << std::get<0>(*it));           
+
+            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            parser.parse(&stream);
+            REQUIRE(parser.findKey(std::get<1>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+        }
+    }
+
+    GIVEN("Json without matching key") {
+        // Json | key | resulting Json
+        std::vector<std::tuple<const char*, const char*, const char*>> parse = {
+            {"", "", ""},
+            {"", "thekey", ""},
+            {"\"", "thekey", ""},
+            {"\"\"", "thekey", ""},
+            {"thekey", "thekey", ""},
+            {",\"thekey\", suffix", "thekey", ""},
+            {",\"akey\":\"notakey\"}", "notakey", "}"},
+            {",\"\\\"notakey\":}", "notakey", "}"},
+            {",\"\\\"notakey\\\":\":}", "\\\"notakey", "}"},
+
+            // Skip matching key in nested object/array
+            {", \"1\": {\"thekey\": 123}}", "thekey", "}"},
+            {", \"1\": [\"thekey\"]}", "thekey", "}"}
+        };
+        
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            INFO("json: " << std::get<0>(*it));
+
+            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            parser.parse(&stream);
+            REQUIRE_FALSE(parser.findKey(std::get<1>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+        }
+    }
+}
+
+SCENARIO("JsonParser::ascend" , "[ascend]") {
+    JsonParser parser;
+
+    GIVEN("Successfull ascends") {
+        std::vector<std::tuple<const char*, size_t, const char*>> parse = {
+            {"123", 0, "123"},
+
+            // One level
+            {"]", 1, ""},
+            {"}", 1, ""},
+
+            // Two levels
+            {"]]", 2, ""},
+            {"]}", 2, ""},
+            {"}}", 2, ""},
+            {"}]", 2, ""},
+
+            // Skip over remaining keys/values
+            {"\"1\": 1, \"2\": 2, \"3\": 3}, suffix", 1, ", suffix"},
+            {"1, 2, 3], suffix", 1, ", suffix"},
+
+            // Ignore strings
+            {"\"]}\", 123], 123", 1, ", 123"},
+            {"\"]}\", 123}, 123", 1, ", 123"},
+
+            // Skip nested objects/arrays
+            {",[1,2,3],[7,8,9]}, suffix", 1, ", suffix"},
+            {",{1,2,3},{7,8,9}}, suffix", 1, ", suffix"},
+            {",[1,2,3],[7,8,9]], suffix", 1, ", suffix"},
+            {",{1,2,3},{7,8,9}], suffix", 1, ", suffix"}
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            INFO("json: " << std::get<0>(*it));
+
+            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            parser.parse(&stream);
+            REQUIRE(parser.ascend(std::get<1>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+        }
+    }
+
+    GIVEN("Unsuccessfull ascends") {
+        std::vector<std::tuple<const char*, size_t, const char*>> parse = {
+            // Empty Json
+            {"", 1, ""},
+            {"", 2, ""},
+            {"", 5, ""},
+
+            // Ignore strings
+            {"\"a String ]\"", 1, ""}
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            INFO("json: " << std::get<0>(*it));
+
+            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            parser.parse(&stream);
+            REQUIRE_FALSE(parser.ascend(std::get<1>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+        }
     }
 }
