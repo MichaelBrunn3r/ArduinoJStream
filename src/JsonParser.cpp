@@ -13,10 +13,10 @@ namespace JStream {
     bool JsonParser::atEnd() {
         skipWhitespace();
 
-        if(stream->available()) {
-            char c = stream->peek();
-            return c != '}' && c != ']';
-        } else return false;
+        if(!stream->available()) return false;
+
+        char c = stream->peek();
+        return c != '}' && c != ']';
     }
 
     bool JsonParser::nextVal() {
@@ -24,20 +24,21 @@ namespace JStream {
     }
 
     String JsonParser::nextKey() {
-        if(next()) {
-            skipWhitespace();
-            if(stream->peek() == '"') {
-                stream->read();
-                String str = readString();
-                skipWhitespace();
-                if(stream->peek() == ':') {
-                    stream->read();
-                    skipWhitespace();
-                    return str;
-                }
-            }
-        } 
-        return "";
+        if(!next()) return "";
+
+        skipWhitespace();
+
+        if(stream->peek() != '"') return "";
+
+        stream->read();
+        String str = readString();
+        skipWhitespace();
+
+        if(stream->peek() != ':') return "";
+
+        stream->read();
+        skipWhitespace();
+        return str;
     }
 
     bool JsonParser::findKey(const char*& thekey) {
@@ -62,6 +63,7 @@ namespace JStream {
                     
                     // Skip current key if char is unescapable
                     if(c==0) {
+                        // stream->read(); <- Unneccesary, since '"' is escapeable
                         exitString();
                         goto NEXT_KEY;
                     } 
@@ -74,7 +76,8 @@ namespace JStream {
 
                 // Match key[idx] with thekey[idx]
                 if(c != *thekey_idx) { // key[idx] != thekey[idx] -> key doesn't match thekey
-                    exitString(escaped);
+                    if(escaped) stream->read(); // Skip escaped char, in case it's a '"'
+                    exitString();
                     goto NEXT_KEY;
                 }
 
@@ -181,29 +184,28 @@ namespace JStream {
 
     void JsonParser::skipWhitespace() {
         while(stream->available()) {
-            if(isWhitespace(stream->peek())) stream->read();
-            else break;
+            if(!isWhitespace(stream->peek())) break;
+            stream->read();
         }
     }
 
-    void JsonParser::exitString(bool isEscaped) {
-        bool escaped = isEscaped;
+    void JsonParser::exitString() {
         while(stream->available()) {
             char c = stream->read();
-            if(c == '\\') escaped = true;
-            else if(!escaped && c == '"') break;
-            else escaped = false;
+            if(c == '\\') stream->read();
+            else if(c == '"') break;
         }
     }
 
     String JsonParser::readString() {
         String str = "";
-        bool escaped = false;
         while(stream->available()) {
             char c = stream->read();
-            if(c == '\\') escaped = true;
-            else if(!escaped && c == '"') break;
-            else escaped = false;
+            if(c == '\\') {
+                if(!stream->available()) break;
+                c = JStream::escape(stream->read());
+                if(c == 0) break;
+            } else if (c == '"') break;
 
             str += c;
         }

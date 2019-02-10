@@ -7,8 +7,13 @@
 #include <cstring>
 
 #include <Arduino.h>
-#include <JsonParser.h>
 #include <MockStringStream.h>
+
+#define protected public
+#define private   public
+#include <JsonParser.h>
+#undef protected
+#undef private
 
 using namespace JStream;
 
@@ -93,18 +98,18 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
         std::vector<std::tuple<const char*, const char*, const char*>> parse = {
             {",\"akey\": 123}", "akey", "123}"},
 
-            {",\"\\\"akey\\\": 123\": 123}", "\\\"akey\\\": 123", "123}"}
+            {",\"\\\"akey\\\": 123\": 123}", "\"akey\": 123", "123}"}
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            INFO("json: " << std::get<0>(*it));
+            const char* json = std::get<0>(*it);
+            const char* key = std::get<1>(*it);
 
-            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            INFO("json: " << json);
+
+            MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-
-            String result = parser.nextKey();
-            INFO("result: " << result);
-            REQUIRE(result.equals(std::get<1>(*it)));
+            REQUIRE(parser.nextKey() == String(key));
 
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
         }
@@ -175,7 +180,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
 
             // Match escaped chars
             {", \"\\\\thekey\" :321}", "\\thekey", "321}"},
-            {", \"\\\\\"thekey\" :321}", "\\\"thekey", "321}"},
+            {", \"\\\\\\\"thekey\" :321}", "\\\"thekey", "321}"},
             {", \"\\\"thekey\" :321}", "\"thekey", "321}"},
             {", \"\\nthekey\" :321}", "\nthekey", "321}"}
         };
@@ -214,11 +219,19 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             // Don't match prefixes
             {",\"thekey123\": 1}", "thekey", "}"},
 
-            // Escaped chars
+            // Correctly escaped chars
             {",\"\\akey\":}", "thekey", "}"},
             {",\"\\\"akey\":}", "thekey", "}"},
             {",\"thekey\\\":\": 1}", "thekey\\", "}"},
-            {",\"\\\"thekey\\\":\":}", "\\\"thekey", "}"}
+            {",\"\\\"thekey\\\":\":}", "\\\"thekey", "}"},
+
+            // Incorrectly and unescapeable chars
+            {",\"\"thekey\": 1}", "\"thekey", ""},
+
+            // EOF
+            {", \"thekey\\", "thekey", ""},
+            {", \"thekey", "thekey", ""},
+            {", \"thekey\"}", "thekey", "}"}
         };
         
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
@@ -298,5 +311,32 @@ SCENARIO("JsonParser::ascend" , "[ascend]") {
             REQUIRE_FALSE(parser.ascend(std::get<1>(*it)));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
         }
+    }
+}
+
+SCENARIO("JsonParser::readString", "[readString]") {
+    JsonParser parser;
+
+    std::vector<std::tuple<const char*, const char*, const char*>> parse = {
+        {"", "", ""},
+        {"astring", "astring", ""},
+        {"astring\", suffix", "astring", ", suffix"},
+
+        // Escaped chars
+        {"a\\\"string\", suffix", "a\"string", ", suffix"},
+        {"a\\\\string\", suffix", "a\\string", ", suffix"},
+        {"a\\nstring\", suffix", "a\nstring", ", suffix"}
+    };
+
+    for(auto it = parse.begin(); it!=parse.end(); ++it) {
+        const char* json = std::get<0>(*it);
+        String result_str = std::get<1>(*it);
+
+        INFO("json: " << json);
+
+        MockStringStream stream = MockStringStream(json);
+        parser.parse(&stream);
+        REQUIRE(parser.readString() == result_str);
+        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
     }
 }
