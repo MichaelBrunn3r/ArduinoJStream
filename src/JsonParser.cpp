@@ -56,11 +56,21 @@ namespace JStream {
 
                 // Escape char
                 bool escaped = false;
-                if(c == '\\' && stream->available()) {
+                if(c == '\\') { // Escape char
                     stream->read();
                     c = JStream::escape(stream->peek());
+                    
+                    // Skip current key if char is unescapable
+                    if(c==0) {
+                        exitString();
+                        goto NEXT_KEY;
+                    } 
+
                     escaped = true;
-                }
+                } else if(c == '"') { // Unescaped '"' terminates the key
+                    stream->read(); // Exit key
+                    goto NEXT_KEY; // try matching next key
+                } 
 
                 // Match key[idx] with thekey[idx]
                 if(c != *thekey_idx) { // key[idx] != thekey[idx] -> key doesn't match thekey

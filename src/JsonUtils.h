@@ -36,6 +36,6 @@ namespace JStream {
         return c == '"' || c == '\\' || c == '/' || c == 'b' || c == 'f' || c == 'n' || c == 'r' || c == 't';
     }
 
-    /** @brief Tries to escapes a character. Returns the same char, if the resulting char would not be valid in json. */
+    /** @brief Tries to escapes a character. Returns 0, if the char cannot be escaped. */
     char escape(const char c);
 }
