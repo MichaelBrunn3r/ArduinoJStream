@@ -42,10 +42,19 @@ namespace JStream {
              * @return false If the key couldn't be found in the current object or the stream ended
              */
             bool findKey(const char*& thekey);
-            bool ascend(size_t levels=1);
+            /**
+             * @brief Exits the specified number of parent objects/arrays
+             * 
+             * - levels=0: method exits immediately
+             * - levels=1: method exits only the current object/array
+             * - levels=1+x: method exits current object/array and x of its parents
+             * 
+             * @param levels The number of parent objects/arrays to exit
+             */
+            bool exit(size_t levels=1);
 
             template <typename T>
-            void asArray(std::vector<T>& vec);
+            void toArray(std::vector<T>& vec);
         private:
             Stream* stream;
 

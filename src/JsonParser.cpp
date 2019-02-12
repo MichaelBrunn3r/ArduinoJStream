@@ -104,7 +104,7 @@ namespace JStream {
         return false;
     } 
     
-    bool JsonParser::ascend(size_t levels) {
+    bool JsonParser::exit(size_t levels) {
         if(levels == 0) return true;
 
         while(stream->available()) {
@@ -151,14 +151,11 @@ namespace JStream {
                     break;
                 case '}':
                 case ']':
-                    if(nesting == 0) {
-                        // End of current object/array, no next key/value
-                        return false;
-                    } else {
-                        // End of a nested object
-                        stream->read();
-                        nesting--;
-                    }
+                    if(nesting == 0) return false; // End of current object/array, no next key/value
+
+                    // End of a nested object
+                    stream->read();
+                    nesting--;
                     break;
                 case '"':
                     // Skip String
