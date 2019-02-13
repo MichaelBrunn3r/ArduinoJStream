@@ -138,7 +138,8 @@ namespace JStream {
     // Private //
     /////////////
 
-    bool JsonParser::next() {
+    bool JsonParser::next(size_t n) {
+        if(n == 0) return true;
         size_t nesting = 0;
 
         while(stream->available()) {
@@ -164,11 +165,15 @@ namespace JStream {
                     break;
                 case ',':
                     stream->read();
-                    if(nesting == 0) {
-                        // Reached start of next key/value
+                    if(nesting != 0) break;
+                        
+                    // Reached start of next key/value
+                    n--;
+                    if(n == 0) {
                         skipWhitespace();
                         return true;
                     }
+                    
                     break;
                 default:
                     stream->read();

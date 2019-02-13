@@ -17,7 +17,7 @@ namespace JStream {
             bool atEnd();
             /**
              * @brief Reads the stream until the start of the next array value
-             * 
+             *
              * This method stops reading at the first char of the value (e.g. stops at 1 -> "...,    1337]").
              * If it comes across the closing ']' of the current array, no next value exists and it stops reading.
              */
@@ -45,7 +45,7 @@ namespace JStream {
             /**
              * @brief Exits the specified number of parent objects/arrays
              * 
-             * - levels=0: method exits immediately
+             * - levels=0: returns immediately
              * - levels=1: method exits only the current object/array
              * - levels=1+x: method exits current object/array and x of its parents
              * 
@@ -59,15 +59,16 @@ namespace JStream {
             Stream* stream;
 
             /**
-             * @brief Reads the stream until the start of the next key/value in the current object/array
+             * @brief Reads the stream until the start of the n-th succeding key/value in the current object/array
              * 
+             * If n=0, method returns immediately.
              * This method stops reading at the first char of the key/value (keys allways begin with '"').
              * If it comes across the closing '}'/']' of the current object/array, it stops reading, since no next key/value exists.
              * 
              * @return true if a next key/value was found
              * @return false otherwise
              */
-            bool next();
+            bool next(size_t n=1);
             void skipWhitespace();
             /** 
              * @brief Reads the stream until coming across the closing '"' 
