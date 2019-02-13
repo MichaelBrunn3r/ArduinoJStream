@@ -16,21 +16,24 @@ namespace JStream {
              */
             bool atEnd();
             /**
-             * @brief Reads the stream until the start of the next array value
+             * @brief Reads the stream until the start of the n-th succeeding array value.
              *
+             * If n=0, method returns immediately.
              * This method stops reading at the first char of the value (e.g. stops at 1 -> "...,    1337]").
              * If it comes across the closing ']' of the current array, no next value exists and it stops reading.
              */
-            bool nextVal();
+            bool nextVal(size_t n=1);
             /**
-             * @brief Like 'next()', but reads and returns the next key in the current object
+             * @brief Reads the stream until the start of the value of the n-th succeeding key-value pair in the current object
+             * and returns its key.
              * 
+             * If n=0, method returns immediately.
              * This method stops reading at the first char of the value (e.g. stops at 1 -> "..., 'akey':  1337]").
              * If it comes across the closing '}' of the current object, it stops reading, since no next value exists.
              * 
-             * @return String The name of the next key. Empty String (i.e. "") if no next key exists
+             * @return String The name of the n-th succeeding key, or "" if it doesn't exist
              */
-            String nextKey();
+            String nextKey(size_t n=1);
             /**
              * @brief Reads the stream until it finds the searched key in the current object
              * 
@@ -59,14 +62,13 @@ namespace JStream {
             Stream* stream;
 
             /**
-             * @brief Reads the stream until the start of the n-th succeding key/value in the current object/array
+             * @brief Reads the stream until the start of the n-th succeeding key/value in the current object/array
              * 
              * If n=0, method returns immediately.
              * This method stops reading at the first char of the key/value (keys allways begin with '"').
              * If it comes across the closing '}'/']' of the current object/array, it stops reading, since no next key/value exists.
              * 
-             * @return true if a next key/value was found
-             * @return false otherwise
+             * @return true if the n-th succeeding key/value was found
              */
             bool next(size_t n=1);
             void skipWhitespace();

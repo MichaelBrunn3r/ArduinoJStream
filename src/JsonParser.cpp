@@ -19,12 +19,12 @@ namespace JStream {
         return c != '}' && c != ']';
     }
 
-    bool JsonParser::nextVal() {
-        return next();
+    bool JsonParser::nextVal(size_t n) {
+        return next(n);
     }
 
-    String JsonParser::nextKey() {
-        if(!next()) return "";
+    String JsonParser::nextKey(size_t n) {
+        if(!next(n)) return "";
 
         skipWhitespace();
 
