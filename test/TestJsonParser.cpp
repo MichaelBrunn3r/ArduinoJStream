@@ -162,6 +162,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             {",\"thekey\": 123}", "thekey", "123}"},
             {",\"thekey\"  : 123}", "thekey", "123}"},
             {",   \"thekey\"    :    123  }  ", "thekey", "123  }  "},
+            {",\n\t\r \"thekey\"\n\t\r :\n\t\r 123\n\t\r }  ", "thekey", "123\n\t\r }  "},
 
             // Skip matching key nested objects/arrays
             {", \"1\": {\"thekey\": 123}, \"thekey\": 321}", "thekey", "321}"},
@@ -181,14 +182,18 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             {",\"the\": 1, \"thekey\": 2}", "thekey", "2}"},
             {",\"thekey\": 1, \"thekeylong\": 2}", "thekeylong", "2}"},
 
-            // Skip over short keys
+            // Skip keys that are prefix of thekey
             {",\"the\": 1, \"thekey\": 2}", "thekey", "2}"},
 
             // Match escaped chars
             {", \"\\\\thekey\" :321}", "\\thekey", "321}"},
             {", \"\\\\\\\"thekey\" :321}", "\\\"thekey", "321}"},
             {", \"\\\"thekey\" :321}", "\"thekey", "321}"},
-            {", \"\\nthekey\" :321}", "\nthekey", "321}"}
+            {", \"\\nthekey\" :321}", "\nthekey", "321}"},
+
+            // Match current key. Don't advance to the next key
+            {"\"thekey\": 123, \"akey\": 312}", "thekey", "123, \"akey\": 312}"},
+            {"\n\t\r \"thekey\": 123, \"akey\": 312}", "thekey", "123, \"akey\": 312}"}
         };
         
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
@@ -217,7 +222,6 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             {",\"thekey\", suffix", "thekey", ""},
             {",\"akey\":\"notakey\"}", "notakey", "}"},
             
-
             // Skip matching key in nested object/array
             {", \"1\": {\"thekey\": 123}}", "thekey", "}"},
             {", \"1\": [\"thekey\"]}", "thekey", "}"},
@@ -234,7 +238,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             // Incorrectly and unescapeable chars
             {",\"\"thekey\": 1}", "\"thekey", ""},
 
-            // EOF
+            // End of Stream
             {", \"thekey\\", "thekey", ""},
             {", \"thekey", "thekey", ""},
             {", \"thekey\"}", "thekey", "}"}
@@ -324,15 +328,6 @@ SCENARIO("JsonParser::exit" , "[exit]") {
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
         }
     }
-}
-
-SCENARIO("JsonParser::enter", "[enter]") {
-    JsonParser parser;
-
-    const char* json = "\"1\": {}";
-
-    MockStringStream stream = MockStringStream(json);
-    parser.parse(&stream);
 }
 
 /////////////////////

@@ -35,7 +35,7 @@ namespace JStream {
              */
             String nextKey(size_t n=1);
             /**
-             * @brief Reads the stream until it finds the searched key in the current object
+             * @brief Reads the stream until it finds the searched for key in the current object
              * 
              * This method stops reading at the first char of the value (e.g. stops at 1 -> "..., 'akey':  1337]").
              * If it comes across the closing '}' of the current object, the key couldn't be found, and it stops reading.
@@ -44,7 +44,7 @@ namespace JStream {
              * @return true If the key was found in the current object
              * @return false If the key couldn't be found in the current object or the stream ended
              */
-            bool findKey(const char*& thekey);
+            bool findKey(const char* thekey);
             /**
              * @brief Exits the specified number of parent objects/arrays
              * 
@@ -55,6 +55,8 @@ namespace JStream {
              * @param levels The number of parent objects/arrays to exit
              */
             bool exit(size_t levels=1);
+
+            
 
             template <typename T>
             void toArray(std::vector<T>& vec);

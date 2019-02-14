@@ -1,6 +1,7 @@
 #include "JsonParser.h"
 #include <JsonUtils.h>
 #include <cstring>
+#include <iostream>
 
 namespace JStream {
     JsonParser::JsonParser() {}
@@ -41,18 +42,17 @@ namespace JStream {
         return str;
     }
 
-    bool JsonParser::findKey(const char*& thekey) {
+    bool JsonParser::findKey(const char* thekey) {
         NEXT_KEY:
-        while(stream->available()) {
-            // Check if next key exists
-            if(!next()) break;
-            if(stream->peek() != '"') continue; // no string -> no key -> try matching next key
-
-            stream->read(); // Read opening '"'  
+        do {
+            // Verify start of key 
+            skipWhitespace();
+            if(stream->peek() != '"') continue;  // not start of a string -> cannot be a key -> try matching next key
+            stream->read();
 
             // Match key and thekey by comparing each char
-            const char* thekey_idx = thekey;
-            while(stream->available() && *thekey_idx != 0) {
+            const char* thekey_it = thekey; // iterator over thekey
+            while(stream->available() && *thekey_it != 0) {
                 char c = stream->peek();
 
                 // Escape char
@@ -75,32 +75,32 @@ namespace JStream {
                 } 
 
                 // Match key[idx] with thekey[idx]
-                if(c != *thekey_idx) { // key[idx] != thekey[idx] -> key doesn't match thekey
+                if(c != *thekey_it) { // key[idx] != thekey[idx] -> key doesn't match thekey
                     if(escaped) stream->read(); // Skip escaped char, in case it's a '"'
                     exitString();
                     goto NEXT_KEY;
                 }
 
                 // Advance to next char
-                thekey_idx++;
+                thekey_it++;
                 stream->read();
             }
 
             // Check if matching was sucessful
-            if(!(*thekey_idx == 0 && stream->peek() == '"')) { // thekey and key have different length -> one is prefix of the other -> no match
+            if(!(*thekey_it == 0 && stream->peek() == '"')) { // len(thekey) =/= len(key) -> one is prefix of the other -> no match
                 exitString();
                 continue; // try matching next key
             } else stream->read(); // Read closing '"'
 
             skipWhitespace(); // Whitespace between key and ':'
 
-            if(stream->peek() != ':') continue; // The matched string was not followd by a ':', therefore it is not a valid json key -> try matching next key
+            if(stream->peek() != ':') continue; // No ':' after matched string -> not a valid json key -> try matching next key
             else stream->read();
 
             skipWhitespace(); // Whitespace before value (e.g "'key':   123")
 
             return true;
-        }
+        } while(next());
         return false;
     } 
     
