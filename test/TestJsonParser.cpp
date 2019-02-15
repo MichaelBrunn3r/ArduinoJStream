@@ -38,13 +38,14 @@ SCENARIO("JsonParser::atEnd", "[atEnd]") {
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = it->first;
+            const char* json_after_exec = it->second;
 
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.atEnd());
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(it->second));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
     
@@ -60,13 +61,14 @@ SCENARIO("JsonParser::atEnd", "[atEnd]") {
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = it->first;
+            const char* json_after_exec = it->second;
 
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.atEnd());
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(it->second));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 }
@@ -86,13 +88,14 @@ SCENARIO("JsonParser::nextVal", "[nextVal]") {
 
     for(auto it = parse.begin(); it!=parse.end(); ++it) {
         const char* json = it->first;
+        const char* json_after_exec = it->second;
 
         INFO("json: " << json);
 
         MockStringStream stream = MockStringStream(json);
         parser.parse(&stream);
         REQUIRE(parser.nextVal());
-        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(it->second));
+        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
     }
 }
 
@@ -110,6 +113,7 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
             const char* key = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
             INFO("json: " << json);
 
@@ -117,7 +121,7 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
             parser.parse(&stream);
             REQUIRE(parser.nextKey() == String(key));
 
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 
@@ -143,12 +147,16 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            INFO("json: " << std::get<0>(*it));
+            const char* json = std::get<0>(*it);
+            const char* key = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
-            MockStringStream stream = MockStringStream(std::get<0>(*it));
+            INFO("json: " << json);
+
+            MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            REQUIRE(parser.nextKey().equals(std::get<1>(*it)));
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            REQUIRE(parser.nextKey().equals(key));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 }
@@ -199,6 +207,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
             const char* thekey = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
             INFO("json: " << json);        
             INFO("key: " << thekey);   
@@ -206,7 +215,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
             bool success = parser.findKey(thekey);
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
             REQUIRE(success);
         }
     }
@@ -247,6 +256,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
             const char* thekey = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
             INFO("json: " << json);
             INFO("key: " << thekey);
@@ -254,7 +264,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
             bool success = parser.findKey(thekey);
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
             REQUIRE_FALSE(success);
         }
     }
@@ -294,14 +304,15 @@ SCENARIO("JsonParser::exit" , "[exit]") {
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            int levels = std::get<1>(*it);
+            size_t levels = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.exit(levels));
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 
@@ -318,16 +329,93 @@ SCENARIO("JsonParser::exit" , "[exit]") {
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            int levels = std::get<1>(*it);
+            size_t levels = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.exit(levels));
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
+}
+
+SCENARIO("JsonParser::find", "[find]") {
+    JsonParser parser;
+
+    GIVEN("Existing path") {
+        std::vector<std::tuple<const char*, const char*, const char*>> parse = {
+            {"", "", ""},
+            {"\"akey\": 1", "", "\"akey\": 1"},
+
+            // Find key
+            {",\"thekey\": 1}", "thekey", "1}"},
+            {"\"thekey\": 1}", "thekey", "1}"},
+            {"\"akey\": 1, \"thekey\": 2}", "thekey", "2}"},
+            {", \"akey\": 1, \"thekey\": 2}", "thekey", "2}"},
+            
+            // Find array element
+            {", 1, 2, 3, 4]", "[0]", ", 1, 2, 3, 4]"},
+            {"0, 1, 2, 3, 4]", "[0]", "0, 1, 2, 3, 4]"},
+            {"0, 1, 2, 3, 4]", "[1]", "1, 2, 3, 4]"},
+            {"0, 1, 2, 3, 4]", "[2]", "2, 3, 4]"},
+            {"0, 1, 2, 3, 4]", "[3]", "3, 4]"},
+            {"0, 1, 2, 3, 4]", "[4]", "4]"},
+
+            // Find nested element
+            {"\"obj1\": {\"thekey\": 1}}", "obj1/thekey", "1}}"},
+            {"\"obj1\": {\"obj2\": {\"thekey\": 1}}}", "obj1/obj2/thekey", "1}}}"},
+            {"[1,2,3], [4,5,6], [7,8,9]]", "[2][2]", "9]]"},
+            {", [1,2,3], [4,5,6], [7,8,9]]", "[2][2]", "6], [7,8,9]]"},
+            {"\"arr1\": [1, 2, 3]", "arr1[1]", "2, 3]"},
+            {"\"arr1\": [1,2,3], \"arr2\": [1, 2, 3]", "arr2[1]", "2, 3]"},
+            {"\"arr1\": [[1,2,3], [4,5,6], [7,8,9]]", "arr1[1][1]", "5,6], [7,8,9]]"},
+            {"\"obj1\": {\"arr1\": [1, 2, 3]}", "obj1/arr1[1]", "2, 3]}"},
+            {"\"obj1\": {\"arr1\": [{\"akey\": 1}, {\"akey\": 1, \"thekey\": 2}, {\"akey\": 1}]}", "obj1/arr1[1]/thekey", "2}, {\"akey\": 1}]}"},
+
+            // Escaped chars
+            {",\"\\\"thekey\\\"\": 1}", "\"thekey\"", "1}"},
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            const char* path = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
+
+            INFO("json: " << json);
+            INFO("path: " << path);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE(parser.find(path));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+
+    GIVEN("Non existing path") {
+        std::vector<std::tuple<const char*, const char*, const char*>> parse = {
+            // Index out of bounds
+            {"0, 1, 2, 3, 4]", "[5]", "]"},
+            {"[1,2,3], [3,4,5], [6,7,8]]", "[1][3]", "], [6,7,8]]"},
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            const char* path = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
+
+            INFO("json: " << json);
+            INFO("path: " << path);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE_FALSE(parser.find(path));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+    
 }
 
 /////////////////////
@@ -367,13 +455,14 @@ SCENARIO("JsonParser::next", "[private, next]") {
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
             size_t n = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.next(n));
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 
@@ -402,13 +491,14 @@ SCENARIO("JsonParser::next", "[private, next]") {
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
             size_t n = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.next(n));
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 }
@@ -425,13 +515,14 @@ SCENARIO("JsonParser::skipWhitespace", "[private, skipWhitespace]") {
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
+            const char* json_after_exec = std::get<1>(*it);
 
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
             parser.skipWhitespace();
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<1>(*it)));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
 }
 
@@ -452,12 +543,13 @@ SCENARIO("JsonParser::readString", "[private, readString]") {
     for(auto it = parse.begin(); it!=parse.end(); ++it) {
         const char* json = std::get<0>(*it);
         String str = std::get<1>(*it);
+        const char* json_after_exec = std::get<2>(*it);
 
         INFO("json: " << json);
 
         MockStringStream stream = MockStringStream(json);
         parser.parse(&stream);
         REQUIRE(parser.readString() == str);
-        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(std::get<2>(*it)));
+        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
     }
 }

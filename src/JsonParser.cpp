@@ -1,7 +1,6 @@
 #include "JsonParser.h"
 #include <JsonUtils.h>
 #include <cstring>
-#include <iostream>
 
 namespace JStream {
     JsonParser::JsonParser() {}
@@ -103,6 +102,57 @@ namespace JStream {
         } while(next());
         return false;
     } 
+
+    #define PATH_SEPERATOR '/'
+    bool JsonParser::find(const char* path) {
+        while(*path) { 
+            if(*path == '[') { // array path segment
+               path++;
+
+                // Read array index
+                size_t idx = 0;
+                while(*path) {
+                    if(JStream::isDecDigit(*path)) {
+                        idx += idx*10 + *path++ - '0';
+                    } else if(*path == ']') {
+                        path++;
+                        if(*path == '/') path++;
+                        break;
+                    }
+                }
+
+                if(!next(idx)) return false;
+            } else { // key path segment
+                // Read key
+                String keyBuf = "";
+                while(*path) {
+                    switch(*path) {
+                        case '[':
+                            goto END_READ_KEY;
+                        case '/': 
+                            path++;
+                            goto END_READ_KEY;
+                        case '\\': 
+                            path++;
+                            keyBuf += *path++;
+                        default: 
+                            keyBuf += *path++;
+                    }
+                }    
+                END_READ_KEY:
+
+                if(!findKey(keyBuf.c_str())) return false;
+            }       
+
+            if(*path) {
+                char c = stream->peek();
+                if(c != '{' && c != '[') return false;
+                stream->read();
+            }
+        }
+        
+        return true;
+    }
     
     bool JsonParser::exit(size_t levels) {
         if(levels == 0) return true;

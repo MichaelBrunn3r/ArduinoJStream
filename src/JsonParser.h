@@ -45,6 +45,7 @@ namespace JStream {
              * @return false If the key couldn't be found in the current object or the stream ended
              */
             bool findKey(const char* thekey);
+            bool find(const char* path);
             /**
              * @brief Exits the specified number of parent objects/arrays
              * 
