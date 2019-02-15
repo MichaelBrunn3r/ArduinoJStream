@@ -59,8 +59,7 @@ namespace JStream {
              * @return false If the key couldn't be found in the current object or the stream ended
              */
             bool findKey(const char* thekey);
-            bool path(std::vector<PathSegment>& vec, const char* path);
-            bool find(const char* path);
+            bool find(std::vector<PathSegment>& path);
             /**
              * @brief Exits the specified number of parent objects/arrays
              * 
@@ -72,7 +71,16 @@ namespace JStream {
              */
             bool exit(size_t levels=1);
 
-            
+            /**
+             * @brief Converts a string to a path that can be used to find Json elements
+             * 
+             * Parses and splits the path string into OFFSET ('[...]') and KEY ('akey') segments.
+             * Segments followed by a KEY segment have to be seperated with '/' (e.g. "key1/key2", "key1[1]/key2"). 
+             * OFFSET segments however are not seperated (e.g. "akey[1]", "akey[1][1]").
+             * 
+             * @return true If the path is valid
+             */
+            static bool compilePath(std::vector<PathSegment>& vec, const char* path_str);
 
             template <typename T>
             void toArray(std::vector<T>& vec);

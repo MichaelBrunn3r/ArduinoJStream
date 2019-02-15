@@ -113,101 +113,20 @@ namespace JStream {
         return false;
     } 
 
-    bool JsonParser::path(std::vector<PathSegment>& vec, const char* path) {
-        while(*path) { 
-            if(*path == '[') { // array path segment
-               path++;
-
-                // Read offset
-                size_t offset = 0;
-                while(*path) {
-                    if(JStream::isDecDigit(*path)) {
-                        offset = offset*10 + *path++ - '0';
-                    } else if(*path == ']') {
-                        path++;
-                        break;
-                    }
-                }
-
-                vec.push_back(offset);
-
-                // offset (i.e. '[...]') can only be followed by another offset or the start of a key (i.e. '/') 
-                if(*path && *path != '/' && *path != '[') return false;
-            } else { // key path segment
-                if(*path == '/') path++;
-
-                // Read key
-                String keyBuf = "";
-                while(*path) {
-                    switch(*path) {
-                        case '[':
-                            goto END_READ_KEY;
-                        case '/': 
-                            path++;
-                            goto END_READ_KEY;
-                        case '\\': 
-                            path++;
-                            if(*path != '[' && *path != ']' && *path != '/') keyBuf += '\\';
-                        default: 
-                            keyBuf += *path++;
-                    }
-                }    
-                END_READ_KEY:
-
-                vec.emplace_back(keyBuf);
-            }
-        }
-        return true;
-    }
-
-    #define PATH_SEPERATOR '/'
-    bool JsonParser::find(const char* path) {
-        while(*path) { 
-            if(*path == '[') { // array path segment
-               path++;
-
-                // Read array index
-                size_t idx = 0;
-                while(*path) {
-                    if(JStream::isDecDigit(*path)) {
-                        idx += idx*10 + *path++ - '0';
-                    } else if(*path == ']') {
-                        path++;
-                        if(*path == '/') path++;
-                        break;
-                    }
-                }
-
-                if(!next(idx)) return false;
-            } else { // key path segment
-                // Read key
-                String keyBuf = "";
-                while(*path) {
-                    switch(*path) {
-                        case '[':
-                            goto END_READ_KEY;
-                        case '/': 
-                            path++;
-                            goto END_READ_KEY;
-                        case '\\': 
-                            path++;
-                            keyBuf += *path++;
-                        default: 
-                            keyBuf += *path++;
-                    }
-                }    
-                END_READ_KEY:
-
-                if(!findKey(keyBuf.c_str())) return false;
-            }       
-
-            if(*path) {
+    bool JsonParser::find(std::vector<PathSegment>& path) {
+        for(auto it=path.begin(); it!=path.end(); ++it) {
+            if(it!=path.begin()) {
                 char c = stream->peek();
                 if(c != '{' && c != '[') return false;
                 stream->read();
             }
+            
+            if(it->type == PathSegmentType::OFFSET) {
+                if(!next(it->val.offset)) return false;
+            } else {
+                if(!findKey(it->val.key)) return false;
+            }
         }
-        
         return true;
     }
     
@@ -239,6 +158,53 @@ namespace JStream {
         }
 
         return false;
+    }
+
+    bool JsonParser::compilePath(std::vector<PathSegment>& vec, const char* path_str) {
+        while(*path_str) { 
+            if(*path_str == '[') { // array path segment
+               path_str++;
+
+                // Read offset
+                size_t offset = 0;
+                while(*path_str) {
+                    if(JStream::isDecDigit(*path_str)) {
+                        offset = offset*10 + *path_str++ - '0';
+                    } else if(*path_str == ']') {
+                        path_str++;
+                        break;
+                    }
+                }
+
+                vec.push_back(offset);
+
+                // offset (i.e. '[...]') can only be followed by another offset or the start of a key (i.e. '/') 
+                if(*path_str && *path_str != '/' && *path_str != '[') return false;
+            } else { // key path segment
+                if(*path_str == '/') path_str++;
+
+                // Read key
+                String keyBuf = "";
+                while(*path_str) {
+                    switch(*path_str) {
+                        case '[':
+                            goto END_READ_KEY;
+                        case '/': 
+                            path_str++;
+                            goto END_READ_KEY;
+                        case '\\': 
+                            path_str++;
+                            if(*path_str != '[' && *path_str != ']' && *path_str != '/') keyBuf += '\\';
+                        default: 
+                            keyBuf += *path_str++;
+                    }
+                }    
+                END_READ_KEY:
+
+                vec.emplace_back(keyBuf);
+            }
+        }
+        return true;
     }
 
     /////////////
