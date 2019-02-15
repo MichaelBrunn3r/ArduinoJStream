@@ -7,6 +7,20 @@
 namespace JStream {
     class JsonParser {
         public:
+            enum class PathSegmentType : byte {OFFSET, KEY};
+            struct PathSegment {
+                PathSegment(size_t offset);
+                PathSegment(const char* key);
+                PathSegment(const char* key, size_t len);
+                PathSegment(String& key);
+
+                PathSegmentType type;
+                union {
+                    size_t offset;
+                    const char* key;
+                } val;
+            };
+
             JsonParser();
             JsonParser(Stream* stream);
 
@@ -45,6 +59,7 @@ namespace JStream {
              * @return false If the key couldn't be found in the current object or the stream ended
              */
             bool findKey(const char* thekey);
+            bool path(std::vector<PathSegment>& vec, const char* path);
             bool find(const char* path);
             /**
              * @brief Exits the specified number of parent objects/arrays

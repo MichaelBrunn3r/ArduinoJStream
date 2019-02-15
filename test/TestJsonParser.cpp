@@ -342,6 +342,69 @@ SCENARIO("JsonParser::exit" , "[exit]") {
     }
 }
 
+SCENARIO("JsonParser::path", "[path]") {
+    JsonParser parser;
+
+    GIVEN("Valid paths") {
+        std::vector<std::tuple<const char*, std::vector<JsonParser::PathSegment>>> parse = {
+            {"thekey", {{"thekey"}}},
+            {"obj1/thekey", {{"obj1"}, {"thekey"}}},
+            {"[42]", {{42}}},
+
+            // Escaped chars
+            {"\\\"thekey", {{"\\\"thekey"}}},
+            {"\\/thekey\\/", {{"/thekey/"}}},
+            {"\\[\\]thekey\\[\\]", {{"[]thekey[]"}}},
+            {"\\]\\[thekey\\]\\[", {{"][thekey]["}}},
+            
+            // Whitespace
+            {"\n\r\t thekey \n\r\t ", {{"\n\r\t thekey \n\r\t "}}},
+            {"\n\r\t obj1 \n\r\t /\n\r\t thekey \n\r\t ", {{"\n\r\t obj1 \n\r\t "}, {"\n\r\t thekey \n\r\t "}}},
+
+            // Nesting
+            {"obj1/obj2/obj3", {{"obj1"}, {"obj2"}, {"obj3"}}},
+            {"[1][2][3]", {{1}, {2}, {3}}},
+            {"obj[1][2][3]", {{"obj"}, {1}, {2}, {3}}},
+            {"obj1[1]/obj2[2]/obj3[3]/obj4", {{"obj1"}, {1}, {"obj2"}, {2}, {"obj3"}, {3}, {"obj4"}}},
+        };
+
+        for(auto it=parse.begin(); it!=parse.end(); ++it) {
+            const char* path = std::get<0>(*it);
+            std::vector<JsonParser::PathSegment> expected_vec = std::get<1>(*it);
+
+            INFO("path: " << path);
+
+            std::vector<JsonParser::PathSegment> vec;
+            REQUIRE(parser.path(vec, path));
+            REQUIRE(vec.size() == expected_vec.size());
+            for(size_t i=0; i<vec.size(); i++) {
+                REQUIRE(vec.at(i).type == expected_vec.at(i).type);
+                if(vec.at(i).type == JsonParser::PathSegmentType::OFFSET) {
+                    REQUIRE(vec.at(i).val.offset == expected_vec.at(i).val.offset);
+                } else {
+                    CHECK_THAT(vec.at(i).val.key, Catch::Matchers::Equals(expected_vec.at(i).val.key));
+                }
+            }
+        }
+    }
+
+    GIVEN("Invalid paths") {
+        std::vector<std::tuple<const char*>> parse = {
+            {"obj1[1]obj2"}
+        };
+
+        for(auto it=parse.begin(); it!=parse.end(); ++it) {
+            const char* path = std::get<0>(*it);
+
+            INFO("path: " << path);
+
+            std::vector<JsonParser::PathSegment> vec;
+            REQUIRE_FALSE(parser.path(vec, path));
+        }
+    }
+
+}
+
 SCENARIO("JsonParser::find", "[find]") {
     JsonParser parser;
 

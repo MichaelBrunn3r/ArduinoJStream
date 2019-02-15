@@ -6,6 +6,16 @@ namespace JStream {
     JsonParser::JsonParser() {}
     JsonParser::JsonParser(Stream* stream) : stream(stream) {}
 
+    JsonParser::PathSegment::PathSegment(size_t offset) : type(PathSegmentType::OFFSET) {
+        val.offset = offset;
+    } 
+    JsonParser::PathSegment::PathSegment(const char* key) : PathSegment(key, std::strlen(key)) {}
+    JsonParser::PathSegment::PathSegment(const char* key, size_t len) : type(PathSegmentType::KEY) {
+        val.key = (char*) memcpy(new char[len+1], key, len+1);
+    } 
+    JsonParser::PathSegment::PathSegment(String& str) : PathSegment(str.c_str(), str.length()) {}
+
+
     void JsonParser::parse(Stream* stream) {
         this->stream = stream;
     }
@@ -102,6 +112,53 @@ namespace JStream {
         } while(next());
         return false;
     } 
+
+    bool JsonParser::path(std::vector<PathSegment>& vec, const char* path) {
+        while(*path) { 
+            if(*path == '[') { // array path segment
+               path++;
+
+                // Read offset
+                size_t offset = 0;
+                while(*path) {
+                    if(JStream::isDecDigit(*path)) {
+                        offset = offset*10 + *path++ - '0';
+                    } else if(*path == ']') {
+                        path++;
+                        break;
+                    }
+                }
+
+                vec.push_back(offset);
+
+                // offset (i.e. '[...]') can only be followed by another offset or the start of a key (i.e. '/') 
+                if(*path && *path != '/' && *path != '[') return false;
+            } else { // key path segment
+                if(*path == '/') path++;
+
+                // Read key
+                String keyBuf = "";
+                while(*path) {
+                    switch(*path) {
+                        case '[':
+                            goto END_READ_KEY;
+                        case '/': 
+                            path++;
+                            goto END_READ_KEY;
+                        case '\\': 
+                            path++;
+                            if(*path != '[' && *path != ']' && *path != '/') keyBuf += '\\';
+                        default: 
+                            keyBuf += *path++;
+                    }
+                }    
+                END_READ_KEY:
+
+                vec.emplace_back(keyBuf);
+            }
+        }
+        return true;
+    }
 
     #define PATH_SEPERATOR '/'
     bool JsonParser::find(const char* path) {
