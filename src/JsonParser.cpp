@@ -33,22 +33,26 @@ namespace JStream {
         return next(n);
     }
 
-    String JsonParser::nextKey(size_t n) {
-        if(!next(n)) return "";
+    bool JsonParser::nextKey(String* buf, size_t n) {
+        if(!next(n)) return false;
 
         skipWhitespace();
 
-        if(stream->peek() != '"') return "";
-
+        if(stream->peek() != '"') return false;
         stream->read();
-        String str = readString();
+
+        // Read and save key
+        if(buf == NULL) exitString();
+        else readString(*buf);
+
         skipWhitespace();
 
-        if(stream->peek() != ':') return "";
-
+        if(stream->peek() != ':') return false;
         stream->read();
+        
         skipWhitespace();
-        return str;
+
+        return true;
     }
 
     bool JsonParser::findKey(const char* thekey) {
@@ -272,8 +276,7 @@ namespace JStream {
         }
     }
 
-    String JsonParser::readString() {
-        String str = "";
+    void JsonParser::readString(String& buf) {
         while(stream->available()) {
             char c = stream->read();
             if(c == '\\') {
@@ -282,8 +285,7 @@ namespace JStream {
                 if(c == 0) break;
             } else if (c == '"') break;
 
-            str += c;
+            buf += c;
         }
-        return str;
     }
 }

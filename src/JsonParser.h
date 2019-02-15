@@ -39,15 +39,18 @@ namespace JStream {
             bool nextVal(size_t n=1);
             /**
              * @brief Reads the stream until the start of the value of the n-th succeeding key-value pair in the current object
-             * and returns its key.
+             * and writes its key in a buffer.
              * 
              * If n=0, method returns immediately.
              * This method stops reading at the first char of the value (e.g. stops at 1 -> "..., 'akey':  1337]").
              * If it comes across the closing '}' of the current object, it stops reading, since no next value exists.
              * 
-             * @return String The name of the n-th succeeding key, or "" if it doesn't exist
+             * @param buf The buffer in which the key will be stored. Set to NULL to not save the key.
+             * 
+             * @return true If the n-th succeding key exists
+             * @return false Otherwise. Content of parameter buf is undefined
              */
-            String nextKey(size_t n=1);
+            bool nextKey(String* buf=NULL, size_t n=1);
             /**
              * @brief Reads the stream until it finds the searched for key in the current object
              * 
@@ -109,6 +112,6 @@ namespace JStream {
              * 
              * Assumes the opening '"' was already read
              */
-            String readString();
+            void readString(String& buf);
     };
 }

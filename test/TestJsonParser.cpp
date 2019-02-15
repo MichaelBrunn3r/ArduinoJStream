@@ -112,50 +112,58 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            const char* key = std::get<1>(*it);
+            const char* expected_key = std::get<1>(*it);
             const char* json_after_exec = std::get<2>(*it);
 
             INFO("json: " << json);
 
+            // Test capturing the key
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            REQUIRE(parser.nextKey() == String(key));
+            String key = "";
+            REQUIRE(parser.nextKey(&key));
+            CHECK_THAT(key.c_str(), Catch::Matchers::Equals(expected_key));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
 
+            // Test not capturing the key
+            stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE(parser.nextKey(NULL));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 
     GIVEN("No next Key exists") {
         // Json string | result of 'nextKey' | resulting Json string
-        std::vector<std::tuple<const char*, const char*, const char*>> parse = {
-            {"", "", ""},
-            {"123", "", ""},
+        std::vector<std::tuple<const char*, const char*>> parse = {
+            {"", ""},
+            {"123", ""},
 
             // Stops at end of object/array
-            {"123}123", "", "}123"}, // Stops at }
-            {"123]123", "", "]123"}, // Stops at ]
+            {"123}123", "}123"}, // Stops at }
+            {"123]123", "]123"}, // Stops at ]
 
-            // Malformed key
-            {",\"akey\" 123}", "", "123}"},
-            {"\"akey\" 123}", "", "}"},
+            // Skips malformed keys
+            {",\"akey\" 123}", "123}"},
+            {"\"akey\" 123}", "}"},
 
             // Inside last key of object
-            {"\"akey\": 123}", "", "}"},
+            {"\"akey\": 123}", "}"},
 
-            {", 1, 2, 3]", "", "1, 2, 3]"},
-            {", 1, 2, 3}", "", "1, 2, 3}"}
+            {", 1, 2, 3]", "1, 2, 3]"},
+            {", 1, 2, 3}", "1, 2, 3}"}
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            const char* key = std::get<1>(*it);
-            const char* json_after_exec = std::get<2>(*it);
+            const char* json_after_exec = std::get<1>(*it);
 
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            REQUIRE(parser.nextKey().equals(key));
+
+            REQUIRE_FALSE(parser.nextKey());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
@@ -609,14 +617,16 @@ SCENARIO("JsonParser::readString", "[private, readString]") {
 
     for(auto it = parse.begin(); it!=parse.end(); ++it) {
         const char* json = std::get<0>(*it);
-        String str = std::get<1>(*it);
+        const char* expected_str = std::get<1>(*it);
         const char* json_after_exec = std::get<2>(*it);
 
         INFO("json: " << json);
 
         MockStringStream stream = MockStringStream(json);
         parser.parse(&stream);
-        REQUIRE(parser.readString() == str);
+        String str = "";
+        parser.readString(str);
+        CHECK_THAT(str.c_str(), Catch::Matchers::Equals(expected_str));
         CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
     }
 }
