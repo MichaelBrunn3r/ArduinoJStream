@@ -442,8 +442,8 @@ SCENARIO("JsonParser::compilePath", "[compilePath]") {
             // Escaped chars
             {"\\\"thekey", {{"\\\"thekey"}}},
             {"\\/thekey\\/", {{"/thekey/"}}},
-            {"\\[\\]thekey\\[\\]", {{"[]thekey[]"}}},
-            {"\\]\\[thekey\\]\\[", {{"][thekey]["}}},
+            {"\\[]thekey\\[]", {{"[]thekey[]"}}},
+            {"]\\[thekey]\\[", {{"][thekey]["}}},
             
             // Whitespace
             {"\n\r\t thekey \n\r\t ", {{"\n\r\t thekey \n\r\t "}}},
@@ -491,6 +491,123 @@ SCENARIO("JsonParser::compilePath", "[compilePath]") {
         }
     }
 
+}
+
+SCENARIO("Parse Int Array") {
+    JsonParser parser;
+
+    GIVEN("valid arrays") {
+        std::vector<std::tuple<const char*, std::vector<long>>> parse {
+            {"[1,-2,3]", {1,-2,3}},
+            {"[9268176913,-1409571945,128568915]", {9268176913,-1409571945,128568915}},
+
+            // Whitespaces
+            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", {1}},
+            {"[\n\r\t 1  \n\r\t ,\n\r\t -2\n\r\t ,\n\r\t 3\n\r\t ]", {1,-2,3}},
+
+            // Parse unordered int array: an array where each integer is a string 
+            {"[\"2\", \"1\", \"3\"]", {2,1,3}},
+            {"[\"2\", \"-1\", \"3\"]", {2,-1,3}},
+            {"[\"-2\", \"-1\", \"-3\"]", {-2,-1,-3}},
+        };
+
+        for(auto it=parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            std::vector<long> expected_vec = std::get<1>(*it);
+
+            INFO("json: " << json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            
+            std::vector<long> vec;
+            REQUIRE(parser.parseIntArray<long>(vec));
+            REQUIRE(vec.size() == expected_vec.size());
+
+            for(int i=0; i<vec.size(); i++) {
+                REQUIRE(vec.at(i) == expected_vec.at(i));
+            }
+        }
+    }
+
+    GIVEN("invalid arrays") {
+        std::vector<const char*> parse {
+            "1,-2,3]",
+            "[1,-2,3",
+            "[1",
+            "[-",
+        };
+
+        for(auto it=parse.begin(); it!=parse.end(); ++it) {
+            const char* json = *it;
+
+            INFO("json: " << json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            
+            std::vector<long> vec;
+            REQUIRE_FALSE(parser.parseIntArray<long>(vec));
+        }
+    }
+}
+
+SCENARIO("Parse unsigned Int Array") {
+    JsonParser parser;
+
+    GIVEN("valid arrays") {
+        std::vector<std::tuple<const char*, std::vector<unsigned long>>> parse {
+            {"[1,2,3]", {1,2,3}},
+            {"[9268176913,1409571945,128568915]", {9268176913,1409571945,128568915}},
+
+            // Whitespaces
+            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", {1}},
+            {"[\n\r\t 1  \n\r\t ,\n\r\t 2\n\r\t ,\n\r\t 3\n\r\t ]", {1,2,3}},
+
+            // Parse unordered int array: an array where each integer is a string 
+            {"[\"2\", \"1\", \"3\"]", {2,1,3}},
+            {"[\"-2\", \"-1\", \"-3\"]", {2,1,3}},
+        };
+
+        for(auto it=parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            std::vector<unsigned long> expected_vec = std::get<1>(*it);
+
+            INFO("json: " << json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            
+            std::vector<unsigned long> vec;
+            REQUIRE(parser.parseUIntArray<unsigned long>(vec));
+            REQUIRE(vec.size() == expected_vec.size());
+
+            for(int i=0; i<vec.size(); i++) {
+                REQUIRE(vec.at(i) == expected_vec.at(i));
+            }
+        }
+    }
+
+    GIVEN("invalid arrays") {
+        std::vector<const char*> parse {
+            "1,2,3]",
+            "[1,2,3",
+            "[1",
+            "[",
+        };
+
+        for(auto it=parse.begin(); it!=parse.end(); ++it) {
+            const char* json = *it;
+
+            INFO("json: " << json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            
+            std::vector<unsigned long> vec;
+            REQUIRE_FALSE(parser.parseUIntArray<unsigned long>(vec));
+        }
+    }
 }
 
 /////////////////////

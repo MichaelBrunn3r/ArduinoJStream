@@ -56,7 +56,7 @@ namespace JStream {
              * 
              * This method stops reading at the first char of the value (e.g. stops at 1 -> "..., 'akey':  1337]").
              * If it comes across the closing '}' of the current object, the key couldn't be found, and it stops reading.
-             * Skips over empty key-value pairs (e.g. "{'1': 1,, '2'; 2}") and malformed keys (e.g. "{'1': 1, 'notakey' 2}" or "{'1': 1, 2, '3': 3}").
+             * Skips over empty key-value pairs (e.g. "{'1': 1,, '2'; 2}") and malformed keys (e.g. "{'notakey' 2}" or "{1, 2, '3': 3}").
              * 
              * @return true If the key was found in the current object
              * @return false If the key couldn't be found in the current object or the stream ended
@@ -86,7 +86,10 @@ namespace JStream {
             static bool compilePath(std::vector<PathSegment>& vec, const char* path_str);
 
             template <typename T>
-            void toArray(std::vector<T>& vec);
+            bool parseIntArray(std::vector<T>& vec);
+            
+            template <typename T>
+            bool parseUIntArray(std::vector<T>& vec);
         private:
             Stream* stream;
 
