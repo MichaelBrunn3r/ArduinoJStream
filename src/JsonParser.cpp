@@ -267,7 +267,7 @@ namespace JStream {
                     break;
                 case ',':
                     stream->read();
-                    if(nesting != 0) break;
+                    if(nesting > 0) break;
                         
                     // Reached start of next key/value
                     n--;
@@ -287,23 +287,27 @@ namespace JStream {
     }
 
     void JsonParser::skipWhitespace() {
-        while(stream->available()) {
-            if(!isWhitespace(stream->peek())) break;
+        char c;
+        do {
+            c = stream->peek();
+            if(isNotWhitespace(c)) break;
             stream->read();
-        }
+        } while(c > 0);
     }
 
     void JsonParser::exitString() {
-        while(stream->available()) {
-            char c = stream->read();
+        char c = stream->read();
+        do {
             if(c == '\\') stream->read();
             else if(c == '"') break;
-        }
+
+            c = stream->read();
+        } while(c > 0);
     }
 
     void JsonParser::readString(String& buf) {
-        while(stream->available()) {
-            char c = stream->read();
+        char c = stream->read();
+        while(c > 0) {
             if(c == '\\') {
                 if(!stream->available()) break;
                 c = JStream::escape(stream->read());
@@ -311,6 +315,7 @@ namespace JStream {
             } else if (c == '"') break;
 
             buf += c;
+            c = stream->read();
         }
     }
 }

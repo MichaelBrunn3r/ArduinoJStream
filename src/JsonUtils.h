@@ -6,6 +6,10 @@ namespace JStream {
         return c == '\t' || c == '\n' || c == '\r' || c == ' ';
     }
 
+    inline bool isNotWhitespace(const char c) {
+        return c > 32;
+    }
+
     /** @brief Returns true if a character is a valid json decimal digit **/
     inline bool isDecDigit(const char c) {
         return c >= 48 && c <= 57;
