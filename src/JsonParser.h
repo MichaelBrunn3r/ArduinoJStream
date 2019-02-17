@@ -3,24 +3,11 @@
 #include <Arduino.h>
 #include <vector>
 #include <Stream.h>
+#include <Path.h>
 
 namespace JStream {
     class JsonParser {
         public:
-            enum class PathSegmentType : byte {OFFSET, KEY};
-            struct PathSegment {
-                PathSegment(size_t offset);
-                PathSegment(const char* key);
-                PathSegment(const char* key, size_t len);
-                PathSegment(String& key);
-
-                PathSegmentType type;
-                union {
-                    size_t offset;
-                    const char* key;
-                } val;
-            };
-
             JsonParser();
             JsonParser(Stream* stream);
 
@@ -62,7 +49,7 @@ namespace JStream {
              * @return false If the key couldn't be found in the current object or the stream ended
              */
             bool findKey(const char* thekey);
-            bool find(std::vector<PathSegment>& path);
+            bool find(Path& path);
             /**
              * @brief Exits the specified number of parent objects/arrays
              * 
@@ -74,20 +61,9 @@ namespace JStream {
              */
             bool exit(size_t levels=1);
 
-            /**
-             * @brief Converts a string to a path that can be used to find Json elements
-             * 
-             * Parses and splits the path string into OFFSET ('[...]') and KEY ('akey') segments.
-             * Segments followed by a KEY segment have to be seperated with '/' (e.g. "key1/key2", "key1[1]/key2"). 
-             * OFFSET segments however are not seperated (e.g. "akey[1]", "akey[1][1]").
-             * 
-             * @return true If the path is valid
-             */
-            static bool compilePath(std::vector<PathSegment>& vec, const char* path_str);
-
             template <typename T>
             bool parseIntArray(std::vector<T>& vec);
-            
+
             template <typename T>
             bool parseUIntArray(std::vector<T>& vec);
         private:

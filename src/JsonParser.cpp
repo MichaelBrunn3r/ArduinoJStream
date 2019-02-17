@@ -6,16 +6,6 @@ namespace JStream {
     JsonParser::JsonParser() {}
     JsonParser::JsonParser(Stream* stream) : stream(stream) {}
 
-    JsonParser::PathSegment::PathSegment(size_t offset) : type(PathSegmentType::OFFSET) {
-        val.offset = offset;
-    } 
-    JsonParser::PathSegment::PathSegment(const char* key) : PathSegment(key, std::strlen(key)) {}
-    JsonParser::PathSegment::PathSegment(const char* key, size_t len) : type(PathSegmentType::KEY) {
-        val.key = (char*) memcpy(new char[len+1], key, len+1);
-    } 
-    JsonParser::PathSegment::PathSegment(String& str) : PathSegment(str.c_str(), str.length()) {}
-
-
     void JsonParser::parse(Stream* stream) {
         this->stream = stream;
     }
@@ -117,7 +107,9 @@ namespace JStream {
         return false;
     } 
 
-    bool JsonParser::find(std::vector<PathSegment>& path) {
+    bool JsonParser::find(Path& path) {
+        if(!path.isValid) return false;
+
         for(auto it=path.begin(); it!=path.end(); ++it) {
             if(it!=path.begin()) {
                 char c = stream->peek();
@@ -162,53 +154,6 @@ namespace JStream {
         }
 
         return false;
-    }
-
-    bool JsonParser::compilePath(std::vector<PathSegment>& vec, const char* path_str) {
-        while(*path_str) { 
-            if(*path_str == '[') { // array path segment
-               path_str++;
-
-                // Read offset
-                size_t offset = 0;
-                while(*path_str) {
-                    if(JStream::isDecDigit(*path_str)) {
-                        offset = offset*10 + *path_str++ - '0';
-                    } else if(*path_str == ']') {
-                        path_str++;
-                        break;
-                    }
-                }
-
-                vec.push_back(offset);
-
-                // offset (i.e. '[...]') can only be followed by another offset or the start of a key (i.e. '/') 
-                if(*path_str && *path_str != '/' && *path_str != '[') return false;
-            } else { // key path segment
-                if(*path_str == '/') path_str++;
-
-                // Read key
-                String keyBuf = "";
-                while(*path_str) {
-                    switch(*path_str) {
-                        case '[':
-                            goto END_READ_KEY;
-                        case '/': 
-                            path_str++;
-                            goto END_READ_KEY;
-                        case '\\': 
-                            path_str++;
-                            if(*path_str != '[' && *path_str != '/') keyBuf += '\\';
-                        default: 
-                            keyBuf += *path_str++;
-                    }
-                }    
-                END_READ_KEY:
-
-                vec.emplace_back(keyBuf);
-            }
-        }
-        return true;
     }
 
     template<typename T>
