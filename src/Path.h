@@ -18,10 +18,11 @@ namespace JStream
             /**
              * @brief Appends a path to the end of the path
              * 
-             * Parses and splits the path string into OFFSET ('[...]') and KEY ('akey') segments.
-             * Segments followed by a KEY segment have to be seperated with '/' (e.g. "key1/key2", "key1[1]/key2"). 
-             * OFFSET segments however are not seperated (e.g. "akey[1]", "akey[1][1]").
-             * 
+             * Formatting:
+             *  - "[n]": OFFSET segment, n-th child element in the parent json array/object
+             *  - "akey": KEY segment, child "akey" of the parent json object
+             *  - "key1/key2[2]/key3": KEY segments are seperated from other segments with a '/'
+             *  - "akey[2][2]": OFFSET segments can be appended directly to other segments
              */
             bool append(const char* path_str);
     };

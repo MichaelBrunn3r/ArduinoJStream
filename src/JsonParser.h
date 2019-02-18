@@ -12,9 +12,7 @@ namespace JStream {
             JsonParser(Stream* stream);
 
             void parse(Stream* stream);
-            /**
-             * @brief Returns true if the stream is at the closing '}'/']' of the current json array/object
-             */
+            /** @brief Returns true if the stream is at the closing '}'/']' of the current json array/object */
             bool atEnd();
             /**
              * @brief Reads the stream until the start of the n-th succeeding array value.
@@ -49,7 +47,17 @@ namespace JStream {
              * @return false If the key couldn't be found in the current object or the stream ended
              */
             bool findKey(const char* thekey);
+            /** @brief Reads the stream until it finds the value at the given path. */
             bool find(Path& path);
+            /** 
+             * @brief Reads the stream until it finds the value at the given path. 
+             * 
+             * Formatting:
+             *  - "[..]": OFFSET segment, n-th element in a json array/object
+             *  - "akey": KEY segment, child of a json object
+             *  - "key1/key2[2]/key3": KEY segments are seperated from other segments with a '/'
+             *  - "akey[2][2]": OFFSET segments can be appended directly to other segments 
+             */
             bool find(const char* path);
             /**
              * @brief Exits the specified number of parent objects/arrays
@@ -62,9 +70,19 @@ namespace JStream {
              */
             bool exit(size_t levels=1);
 
+            /**
+             * @brief Parses an array of integers
+             * 
+             * Assumes stream is positioned before the opening '['
+             */
             template <typename T>
             bool parseIntArray(std::vector<T>& vec);
 
+            /**
+             * @brief Parses an array of unsigned integers
+             * 
+             * Assumes stream is positioned before the opening '['
+             */
             template <typename T>
             bool parseUIntArray(std::vector<T>& vec);
         private:
