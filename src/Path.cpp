@@ -8,12 +8,16 @@ namespace JStream {
     /// Path ///
     ////////////
 
-    Path::Path(const char* path_str, size_t n) {
-        reserve(n);
-        isValid = compile(path_str);
+    Path::Path(const char* path_str) {
+        isValid = append(path_str);
     }
 
-    bool Path::compile(const char* path_str) {
+    Path::Path(const char* path_str, size_t n) {
+        reserve(n);
+        isValid = append(path_str);
+    }
+
+    bool Path::append(const char* path_str) {
         while(*path_str) { 
             if(*path_str == '[') { // array path segment
                path_str++;

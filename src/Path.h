@@ -7,22 +7,23 @@ namespace JStream
 {
     class PathSegment; // Forward declaration
 
+    // Representation of a path that can be used to find Json elements
     class Path : public std::vector<PathSegment> {
         public:
             bool isValid;
 
-            Path(const char* path_str, size_t n=3);
+            Path(const char* path_str);
+            Path(const char* path_str, size_t n);
 
-        private:
             /**
-             * @brief Converts a string to a path that can be used to find Json elements
+             * @brief Appends a path to the end of the path
              * 
              * Parses and splits the path string into OFFSET ('[...]') and KEY ('akey') segments.
              * Segments followed by a KEY segment have to be seperated with '/' (e.g. "key1/key2", "key1[1]/key2"). 
              * OFFSET segments however are not seperated (e.g. "akey[1]", "akey[1][1]").
              * 
              */
-            bool compile(const char* path_str);
+            bool append(const char* path_str);
     };
 
     enum class PathSegmentType : byte {OFFSET, KEY};
