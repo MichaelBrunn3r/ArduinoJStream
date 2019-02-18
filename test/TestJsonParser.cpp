@@ -402,6 +402,11 @@ SCENARIO("JsonParser::find", "[find]") {
             Path path = Path(path_str);
             REQUIRE(parser.find(path));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+
+            stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE(parser.find(path_str));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 

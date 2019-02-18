@@ -125,6 +125,60 @@ namespace JStream {
         }
         return true;
     }
+
+    bool JsonParser::find(const char* path) {
+        const char* start = path;
+        while(*path) { 
+            if(path != start) {
+                char c = stream->peek();
+                if(c != '{' && c != '[') return false;
+                stream->read();
+            }
+
+            if(*path == '[') { // array path segment
+               path++;
+
+                // Read offset
+                size_t offset = 0;
+                while(*path) {
+                    if(JStream::isDecDigit(*path)) {
+                        offset = offset*10 + *path++ - '0';
+                    } else if(*path == ']') {
+                        path++;
+                        break;
+                    }
+                }
+
+                if(!next(offset)) return false;
+
+                // offset (i.e. '[...]') can only be followed by another offset or the start of a key (i.e. '/') 
+                if(*path && *path != '/' && *path != '[') return false;
+            } else { // key path segment
+                if(*path == '/') path++;
+
+                // Read key
+                String keyBuf = "";
+                while(*path) {
+                    switch(*path) {
+                        case '[':
+                            goto END_READ_KEY;
+                        case '/': 
+                            path++;
+                            goto END_READ_KEY;
+                        case '\\': 
+                            path++;
+                            if(*path != '[' && *path != '/') keyBuf += '\\';
+                        default: 
+                            keyBuf += *path++;
+                    }
+                }    
+                END_READ_KEY:
+
+                if(!findKey(keyBuf.c_str())) return false;
+            }
+        }
+        return true;
+    }
     
     bool JsonParser::exit(size_t levels) {
         if(levels == 0) return true;

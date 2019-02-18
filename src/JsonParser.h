@@ -50,6 +50,7 @@ namespace JStream {
              */
             bool findKey(const char* thekey);
             bool find(Path& path);
+            bool find(const char* path);
             /**
              * @brief Exits the specified number of parent objects/arrays
              * 
