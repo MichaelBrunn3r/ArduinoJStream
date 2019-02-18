@@ -55,42 +55,33 @@ namespace JStream {
 
             // Match key and thekey by comparing each char
             const char* thekey_it = thekey; // iterator over thekey
-            while(stream->available() && *thekey_it != 0) {
-                char c = stream->peek();
+            while(*thekey_it) {
+                char c = stream->read();
 
-                // Escape char
-                bool escaped = false;
+                if(c <= 0) return false; // Stream ended
+
                 if(c == '\\') { // Escape char
-                    stream->read();
-                    c = JStream::escape(stream->peek());
+                    c = JStream::escape(stream->read());
                     
                     // Skip current key if char is unescapable
                     if(c==0) {
-                        // stream->read(); <- Unneccesary, since '"' is escapeable
                         exitString();
                         goto NEXT_KEY;
-                    } 
-
-                    escaped = true;
-                } else if(c == '"') { // Unescaped '"' terminates the key
-                    stream->read(); // Exit key
-                    goto NEXT_KEY; // try matching next key
-                } 
+                    }
+                } else if(c == '"') goto NEXT_KEY; // Unescaped '"' terminates key -> thekey is longer than key -> try matching next key
 
                 // Match key[idx] with thekey[idx]
                 if(c != *thekey_it) { // key[idx] != thekey[idx] -> key doesn't match thekey
-                    if(escaped) stream->read(); // Skip escaped char, in case it's a '"'
                     exitString();
                     goto NEXT_KEY;
                 }
 
                 // Advance to next char
                 thekey_it++;
-                stream->read();
             }
 
             // Check if matching was sucessful
-            if(!(*thekey_it == 0 && stream->peek() == '"')) { // len(thekey) =/= len(key) -> one is prefix of the other -> no match
+            if(*thekey_it != 0 || stream->peek() != '"') { // len(thekey) =/= len(key) -> one is prefix of the other -> no match
                 exitString();
                 continue; // try matching next key
             } else stream->read(); // Read closing '"'
