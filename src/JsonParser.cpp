@@ -363,7 +363,6 @@ namespace JStream {
         char c = stream->read();
         while(c > 0) {
             if(c == '\\') {
-                if(!stream->available()) break;
                 c = JStream::escape(stream->read());
                 if(c == 0) break;
             } else if (c == '"') break;
