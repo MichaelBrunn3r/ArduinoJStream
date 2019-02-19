@@ -47,9 +47,9 @@ namespace JStream {
 
     bool JsonParser::findKey(const char* thekey) {
         NEXT_KEY:
+        skipWhitespace();
         do {
             // Verify start of key 
-            skipWhitespace();
             if(stream->peek() != '"') continue;  // not start of a string -> cannot be a key -> try matching next key
             stream->read();
 
@@ -174,29 +174,22 @@ namespace JStream {
     bool JsonParser::exit(size_t levels) {
         if(levels == 0) return true;
 
-        while(stream->available()) {
-            switch(stream->peek()) {
-                case '{':
-                case '[':
-                    // Start of a nested object
-                    stream->read();
+        char c;
+        do {
+            c = stream->read();
+            switch(c) {
+                case '{': case '[':
                     levels++;
                     break;
-                case '}':
-                case ']':
-                    stream->read();
-                    if(levels == 1) return true; // End of current object/array, no next key/value
-                    else levels--; // End of a nested object
+                case '}': case ']':
+                    if(levels == 1) return true;
+                    levels--;
                     break;
                 case '"':
-                    // Skip String
-                    stream->read(); // Enter String
-                    exitString(); // Exit String
+                    exitString();
                     break;
-                default:
-                    stream->read();
             }
-        }
+        } while(c>0);
 
         return false;
     }
@@ -213,31 +206,27 @@ namespace JStream {
         T num = 0;
         T sign = 1;
 
-        while(stream->available()) {
-            switch(stream->peek()) {
+        char c;
+        do {
+            c = stream->read();
+            switch(c) {
                 case ',':
-                    stream->read();
-
                     vec.push_back(num*sign); // Save read number
                     num = 0; // Reset num
                     sign = 1;
 
                     break;
                 case ']':
-                    stream->read();
                     vec.push_back(num*sign);
                     return true;
                 case '-':
-                    stream->read();
                     sign = -1;
                     break;
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    num = num*10 + stream->read() - '0';
+                    num = num*10 + c - '0';
                     break;
-                default:
-                    stream->read();
             }
-        }
+        } while(c>0);
 
         return false;
     }
@@ -254,28 +243,25 @@ namespace JStream {
 
         T num = 0;
 
-        while(stream->available()) {
-            switch(stream->peek()) {
+        char c;
+        do {
+            c = stream->read();
+            switch(c) {
                 case ',':
-                    stream->read();
-
                     vec.push_back(num); // Save read number
-                    num = 0; // Reset num
+                    num = 0;
 
                     break;
                 case ']':
-                    stream->read();
-                    vec.push_back(num);
+                    vec.push_back(num); // Save read number
                     return true;
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    num = num*10 + stream->read() - '0';
+                    num = num*10 + c - '0';
                     break;
-                default:
-                    stream->read();
             }
-        }
+        } while(c>0);
 
-        return false;
+        return false; // Stream ended without closing the array
     }
 
     template bool JsonParser::parseUIntArray<byte>(std::vector<byte>& vec);
@@ -289,22 +275,18 @@ namespace JStream {
         if(n == 0) return true;
         size_t nesting = 0;
 
-        while(stream->available()) {
-            switch(stream->peek()) {
-                case '{':
-                case '[':
+        char c;
+        do {
+            c = stream->peek();
+            switch(c) {
+                case '{': case '[':
                     // Start of a nested object
                     stream->read();
-                    nesting++;
-                    break;
-                case '}':
-                case ']':
-                    if(nesting == 0) return false; // End of current object/array, no next key/value
+                    exit(1);
 
-                    // End of a nested object
-                    stream->read();
-                    nesting--;
                     break;
+                case '}': case ']':
+                    return false; // End of current object/array, no next key/value
                 case '"':
                     // Skip String
                     stream->read(); // Enter String
@@ -325,7 +307,7 @@ namespace JStream {
                 default:
                     stream->read();
             }
-        }
+        } while(c>0);
 
         // Stream ended, no next key/value
         return false;
