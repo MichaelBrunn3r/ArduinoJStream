@@ -12,39 +12,47 @@ namespace JStream {
             JsonParser(Stream* stream);
 
             void parse(Stream* stream);
-            /** @brief Returns true if the stream is at the closing '}'/']' of the current json array/object */
+            /** @brief Returns true if the stream is at the closing '}'/']' of the current parent object/array */
             bool atEnd();
             /**
-             * @brief Reads the stream until the start of the n-th succeeding array value.
-             *
-             * If n=0, method returns immediately.
-             * This method stops reading at the first char of the value (e.g. stops at 1 -> "...,    1337]").
-             * If it comes across the closing ']' of the current array, no next value exists and it stops reading.
+             * @brief Reads the stream until the start of the n-th succeeding array value
+             * 
+             * Stream position:
+             * - on success: First char of the n-th value
+             * - on fail: Closing ']' of the current array
+             * 
+             * Behaviour:
+             * - Assumes the current parent collection is an array
+             * - n=0, method returns immediately
              */
             bool nextVal(size_t n=1);
             /**
-             * @brief Reads the stream until the start of the value of the n-th succeeding key-value pair in the current object
-             * and writes its key in a buffer.
+             * @brief Reads the stream until the next valid key in the current object and writes it into a buffer
              * 
-             * If n=0, method returns immediately.
-             * This method stops reading at the first char of the value (e.g. stops at 1 -> "..., 'akey':  1337]").
-             * If it comes across the closing '}' of the current object, it stops reading, since no next value exists.
+             * Stream position:
+             * - on success: First char of the value corresponding to the key
+             * - on fail: Closing '}' of the current object
              * 
-             * @param buf The buffer in which the key will be stored. Set to NULL to not save the key.
+             * Behaviour:
+             * - Assumes the current parent collection is an object
+             * - Skips over invalid key-value pairs (e.g. ',"invalid" 1, "akey": 2')
+             * - Skips over non key-value pairs (for example in arrays)
              * 
-             * @return true If the n-th succeding key exists
-             * @return false Otherwise. Content of parameter buf is undefined
+             * @param buf The buffer in which the key will be written. Set to NULL to not save the key.
              */
-            bool nextKey(String* buf=NULL, size_t n=1);
+            bool nextKey(String* buf=NULL);
             /**
              * @brief Reads the stream until it finds the searched for key in the current object
              * 
-             * This method stops reading at the first char of the value (e.g. stops at 1 -> "..., 'akey':  1337]").
-             * If it comes across the closing '}' of the current object, the key couldn't be found, and it stops reading.
-             * Skips over empty key-value pairs (e.g. "{'1': 1,, '2'; 2}") and malformed keys (e.g. "{'notakey' 2}" or "{1, 2, '3': 3}").
+             * Stream position:
+             * - on success: First char of the value corresponding to the key
+             * - on fail: Stream is read until the end of the current object
              * 
-             * @return true If the key was found in the current object
-             * @return false If the key couldn't be found in the current object or the stream ended
+             * Behaviour:
+             * - Treats the current parent collection as an object
+             * - Skips over malformed invalid keys (e.g. ',"invalid" 1, "akey": 2'), including non strings (e.g ',1,2,3, "akey": 2]')
+             *
+             * @return true If the key was found in the current object(/array), false otherwise
              */
             bool findKey(const char* thekey);
             /** @brief Reads the stream until it finds the value at the given path. */

@@ -107,9 +107,18 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
     GIVEN("Next Key exists") {
         // Json string | result of 'nextKey' | resulting Json string
         std::vector<std::tuple<const char*, const char*, const char*>> parse = {
+            {"\"akey\": 123}", "akey", "123}"},
+            {"\n\r\t \"akey\": 123}", "akey", "123}"},
             {",\"akey\": 123}", "akey", "123}"},
 
-            {",\"\\\"akey\\\": 123\": 123}", "\"akey\": 123", "123}"}
+            // Read escpaped chars
+            {",\"\\\"akey\\\": 123\": 123}", "\"akey\": 123", "123}"},
+
+            // Skip invalid key
+            {", \"invalidkey\" 123, \"akey\": 123}", "akey", "123}"},
+            {"\"invalidkey\" 123, \"akey\": 123}", "akey", "123}"},
+            {", 1, 2, 3, \"akey\": 123}", "akey", "123}"},
+            {", [1,2,3], {\"key1\": 123}, \"akey\": 123}", "akey", "123}"}
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
@@ -144,16 +153,16 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
             // Stops at end of object/array
             {"123}123", "}123"}, // Stops at }
             {"123]123", "]123"}, // Stops at ]
+            {"\n\r\t }, 123", "}, 123"}, // Stops at ]
+            {"\n\r\t ], 123", "], 123"}, // Stops at ]
 
             // Skips malformed keys
-            {",\"akey\" 123}", "123}"},
+            {",\"akey\" 123}", "}"},
             {"\"akey\" 123}", "}"},
 
-            // Inside last key of object
-            {"\"akey\": 123}", "}"},
-
-            {", 1, 2, 3]", "1, 2, 3]"},
-            {", 1, 2, 3}", "1, 2, 3}"}
+            // Skip until end in arrays
+            {", 1, 2, 3]", "]"},
+            {", 1, 2, 3}", "}"}
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
@@ -165,7 +174,7 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
 
-            REQUIRE_FALSE(parser.nextKey());
+            REQUIRE_FALSE(parser.nextKey(NULL));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
