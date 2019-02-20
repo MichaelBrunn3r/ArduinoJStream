@@ -746,7 +746,7 @@ SCENARIO("JsonParser::readString", "[private, readString]") {
         MockStringStream stream = MockStringStream(json);
         parser.parse(&stream);
         String str = "";
-        parser.readString(str);
+        parser.readString(str, true);
         CHECK_THAT(str.c_str(), Catch::Matchers::Equals(expected_str));
         CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
     }

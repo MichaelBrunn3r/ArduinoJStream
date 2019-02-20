@@ -33,7 +33,7 @@ namespace JStream {
 
         // Read and save key
         if(buf == NULL) skipString(true);
-        else readString(*buf);
+        else readString(*buf, true);
 
         skipWhitespace();
 
@@ -194,6 +194,33 @@ namespace JStream {
         return false;
     }
 
+    void JsonParser::skipString(bool inStr) {
+        if(!inStr) stream->read(); // Read opening '"'
+
+        char c = stream->read();
+        do {
+            if(c == '\\') stream->read();
+            else if(c == '"') break;
+
+            c = stream->read();
+        } while(c > 0);
+    }
+
+    void JsonParser::readString(String& buf, bool inStr) {
+        if(!inStr) stream->read(); // Read opening '"'
+
+        char c = stream->read();
+        while(c > 0) {
+            if(c == '\\') {
+                c = JStream::escape(stream->read());
+                if(c == 0) break;
+            } else if (c == '"') break;
+
+            buf += c;
+            c = stream->read();
+        }
+    }
+
     template<typename T>
     bool JsonParser::parseIntArray(std::vector<T>& vec) {
         skipWhitespace();
@@ -320,30 +347,5 @@ namespace JStream {
             if(isNotWhitespace(c)) break;
             stream->read();
         } while(c > 0);
-    }
-
-    void JsonParser::skipString(bool inStr) {
-        if(!inStr) stream->read(); // Read opening '"'
-
-        char c = stream->read();
-        do {
-            if(c == '\\') stream->read();
-            else if(c == '"') break;
-
-            c = stream->read();
-        } while(c > 0);
-    }
-
-    void JsonParser::readString(String& buf) {
-        char c = stream->read();
-        while(c > 0) {
-            if(c == '\\') {
-                c = JStream::escape(stream->read());
-                if(c == 0) break;
-            } else if (c == '"') break;
-
-            buf += c;
-            c = stream->read();
-        }
     }
 }
