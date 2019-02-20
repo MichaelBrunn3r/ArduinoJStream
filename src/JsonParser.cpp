@@ -32,7 +32,7 @@ namespace JStream {
         stream->read();
 
         // Read and save key
-        if(buf == NULL) exitString();
+        if(buf == NULL) skipString(true);
         else readString(*buf);
 
         skipWhitespace();
@@ -65,14 +65,14 @@ namespace JStream {
                     
                     // Skip current key if char is unescapable
                     if(c==0) {
-                        exitString();
+                        skipString(true);
                         goto NEXT_KEY;
                     }
                 } else if(c == '"') goto NEXT_KEY; // Unescaped '"' terminates key -> thekey is longer than key -> try matching next key
 
                 // Match key[idx] with thekey[idx]
                 if(c != *thekey_it) { // key[idx] != thekey[idx] -> key doesn't match thekey
-                    exitString();
+                    skipString(true);
                     goto NEXT_KEY;
                 }
 
@@ -82,7 +82,7 @@ namespace JStream {
 
             // Check if matching was sucessful
             if(*thekey_it != 0 || stream->peek() != '"') { // len(thekey) =/= len(key) -> one is prefix of the other -> no match
-                exitString();
+                skipString(true);
                 continue; // try matching next key
             } else stream->read(); // Read closing '"'
 
@@ -186,7 +186,7 @@ namespace JStream {
                     levels--;
                     break;
                 case '"':
-                    exitString();
+                    skipString(true);
                     break;
             }
         } while(c>0);
@@ -290,7 +290,7 @@ namespace JStream {
                 case '"':
                     // Skip String
                     stream->read(); // Enter String
-                    exitString(); // Exit String
+                    skipString(true); // Exit String
                     break;
                 case ',':
                     stream->read();
@@ -322,7 +322,9 @@ namespace JStream {
         } while(c > 0);
     }
 
-    void JsonParser::exitString() {
+    void JsonParser::skipString(bool inStr) {
+        if(!inStr) stream->read(); // Read opening '"'
+
         char c = stream->read();
         do {
             if(c == '\\') stream->read();

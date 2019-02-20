@@ -85,6 +85,13 @@ namespace JStream {
              */
             template <typename T>
             bool parseUIntArray(std::vector<T>& vec);
+
+            /** 
+             * @brief Reads over a string in the stream
+             * 
+             * @param inStr Indicates if the stream is positioned either inside or just before the opening '"' of the string 
+             **/
+            void skipString(bool inStr=false);
         private:
             Stream* stream;
 
@@ -99,12 +106,6 @@ namespace JStream {
              */
             bool next(size_t n=1);
             void skipWhitespace();
-            /** 
-             * @brief Reads the stream until coming across the closing '"' 
-             * 
-             * Assumes the opening '"' was already read
-             **/
-            void exitString();
             /**
              * @brief Reads a string from the stream until coming across the closing '"'
              * 
