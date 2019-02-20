@@ -71,14 +71,14 @@ namespace JStream {
             bool exit(size_t levels=1);
             /** 
              * @brief Reads over a string in the stream
-             * @param inStr Indicates if the stream is positioned either inside or at the opening '"' of the string 
+             * @param inStr Indicates if the stream is positioned either inside or at the opening '"' of the string  
              **/
-            void skipString(bool inStr=false);
+            bool skipString(bool inStr=false);
             /**
              * @brief Reads a string from the stream into a buffer
              * @param inStr Indicates if the stream is positioned either inside or at the opening '"' of the string 
              */
-            void readString(String& buf, bool inStr=false);
+            bool readString(String& buf, bool inStr=false);
 
             /**
              * @brief Parses an array of integers

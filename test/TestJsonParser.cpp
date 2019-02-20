@@ -352,6 +352,78 @@ SCENARIO("JsonParser::exit" , "[exit]") {
     }
 }
 
+SCENARIO("JsonParser::readString & JsonParser::skipString", "[private, readString, skipString]") {
+    JsonParser parser;
+
+    GIVEN("valid strings") {
+        std::vector<std::tuple<const char*, bool, const char*, const char*>> parse = {
+            {"\"", true, "", ""},
+            {"astring\", suffix", true, "astring", ", suffix"},
+            {"\"astring\", suffix", false, "astring", ", suffix"},
+
+            // Escaped chars
+            {"a\\\"string\", suffix", true, "a\"string", ", suffix"},
+            {"a\\\\string\", suffix", true, "a\\string", ", suffix"},
+            {"a\\nstring\", suffix", true, "a\nstring", ", suffix"}
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            const bool inStr = std::get<1>(*it);
+            const char* expected_str = std::get<2>(*it);
+            const char* json_after_exec = std::get<3>(*it);
+
+            INFO("json: " << json);
+
+            // readString
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            String str = "";
+            REQUIRE(parser.readString(str, inStr));
+            CHECK_THAT(str.c_str(), Catch::Matchers::Equals(expected_str));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+
+            // skipString
+            stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE(parser.skipString(inStr));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+
+    GIVEN("invalid strings") {
+        std::vector<std::tuple<const char*, bool, const char*, const char*>> parse = {
+            {"", true, "", ""},
+            {"\"", false, "", ""},
+            {"astring", true, "astring", ""},
+            {"\"astring", false, "astring", ""},
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            const bool inStr = std::get<1>(*it);
+            const char* expected_str = std::get<2>(*it);
+            const char* json_after_exec = std::get<3>(*it);
+
+            INFO("json: " << json);
+
+            // readString
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            String str = "";
+            REQUIRE_FALSE(parser.readString(str, inStr));
+            CHECK_THAT(str.c_str(), Catch::Matchers::Equals(expected_str));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+
+            // skipString
+            stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE_FALSE(parser.skipString(inStr));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+}
+
 SCENARIO("JsonParser::find", "[find]") {
     JsonParser parser;
 
@@ -720,34 +792,4 @@ SCENARIO("JsonParser::skipWhitespace", "[private, skipWhitespace]") {
             parser.skipWhitespace();
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
-}
-
-SCENARIO("JsonParser::readString", "[private, readString]") {
-    JsonParser parser;
-
-    std::vector<std::tuple<const char*, const char*, const char*>> parse = {
-        {"", "", ""},
-        {"astring", "astring", ""},
-        {"astring\", suffix", "astring", ", suffix"},
-
-        // Escaped chars
-        {"a\\\"string\", suffix", "a\"string", ", suffix"},
-        {"a\\\\string\", suffix", "a\\string", ", suffix"},
-        {"a\\nstring\", suffix", "a\nstring", ", suffix"}
-    };
-
-    for(auto it = parse.begin(); it!=parse.end(); ++it) {
-        const char* json = std::get<0>(*it);
-        const char* expected_str = std::get<1>(*it);
-        const char* json_after_exec = std::get<2>(*it);
-
-        INFO("json: " << json);
-
-        MockStringStream stream = MockStringStream(json);
-        parser.parse(&stream);
-        String str = "";
-        parser.readString(str, true);
-        CHECK_THAT(str.c_str(), Catch::Matchers::Equals(expected_str));
-        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
-    }
 }

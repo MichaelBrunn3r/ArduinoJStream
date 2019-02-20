@@ -32,8 +32,11 @@ namespace JStream {
         stream->read();
 
         // Read and save key
-        if(buf == NULL) skipString(true);
-        else readString(*buf, true);
+        if(buf == NULL) {
+            if(!skipString(true)) return false;
+        } else {
+            if(!readString(*buf, true)) return false;
+        }
 
         skipWhitespace();
 
@@ -194,31 +197,35 @@ namespace JStream {
         return false;
     }
 
-    void JsonParser::skipString(bool inStr) {
-        if(!inStr) stream->read(); // Read opening '"'
+    bool JsonParser::skipString(bool inStr) {
+        if(!inStr) if(stream->read() != '"') return false; // Read opening '"'
 
         char c = stream->read();
         do {
             if(c == '\\') stream->read();
-            else if(c == '"') break;
+            else if(c == '"') return true;
 
             c = stream->read();
         } while(c > 0);
+
+        return false; // Stream ended without closing the string
     }
 
-    void JsonParser::readString(String& buf, bool inStr) {
-        if(!inStr) stream->read(); // Read opening '"'
+    bool JsonParser::readString(String& buf, bool inStr) {
+        if(!inStr) if(stream->read() != '"') return false; // Read opening '"'
 
         char c = stream->read();
         while(c > 0) {
             if(c == '\\') {
                 c = JStream::escape(stream->read());
                 if(c == 0) break;
-            } else if (c == '"') break;
+            } else if (c == '"') return true;
 
             buf += c;
             c = stream->read();
         }
+
+        return false; // Stream ended without closing the string
     }
 
     template<typename T>
