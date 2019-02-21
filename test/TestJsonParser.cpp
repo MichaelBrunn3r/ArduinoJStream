@@ -582,23 +582,37 @@ SCENARIO("Parse Int Array") {
     JsonParser parser;
 
     GIVEN("valid arrays") {
-        std::vector<std::tuple<const char*, std::vector<long>>> parse {
-            {"[1,-2,3]", {1,-2,3}},
-            {"[9268176913,-1409571945,128568915]", {9268176913,-1409571945,128568915}},
+        std::vector<std::tuple<const char*, bool, std::vector<long>>> parse {
+            {"[1,-2,3]", false, {1,-2,3}},
+            {"[-1,2,-3]", false, {-1,2,-3}},
+            {"[1,-2,3]", true, {1,-2,3}},
+            {"1,-2,3]", true, {1,-2,3}},
+            {"-1,2,-3]", true, {-1,2,-3}},
+            {"[9268176913,-1409571945,128568915]", false, {9268176913,-1409571945,128568915}},
 
             // Whitespaces
-            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", {1}},
-            {"[\n\r\t 1  \n\r\t ,\n\r\t -2\n\r\t ,\n\r\t 3\n\r\t ]", {1,-2,3}},
+            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", false, {1}},
+            {"[\n\r\t 1  \n\r\t ,\n\r\t -2\n\r\t ,\n\r\t 3\n\r\t ]", false, {1,-2,3}},
+            {"[-\r\n\t 1, 2\r\n\t 3, 4abcdefghijklmnopqrstuvwxyz5]", false, {-1,23,45}},
 
             // Parse unordered int array: an array where each integer is a string 
-            {"[\"2\", \"1\", \"3\"]", {2,1,3}},
-            {"[\"2\", \"-1\", \"3\"]", {2,-1,3}},
-            {"[\"-2\", \"-1\", \"-3\"]", {-2,-1,-3}},
+            {"[\"2\", \"1\", \"3\"]", false, {2,1,3}},
+            {"[\"2\", \"-1\", \"3\"]", false, {2,-1,3}},
+            {"[\"-2\", \"-1\", \"-3\"]", false, {-2,-1,-3}},
+
+            // Minus has to be in front of number
+            {"[1-,2,3]", false, {1,2,3}},
+            {"[1\r\n\t -,2,3]", false, {1,2,3}},
+
+            // Don't save empty numbers
+            {"[1,,,2]", false, {1,2}},
+            {",,,1,2]", true, {1,2}},
         };
 
         for(auto it=parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            std::vector<long> expected_vec = std::get<1>(*it);
+            bool inArray = std::get<1>(*it);
+            std::vector<long> expected_vec = std::get<2>(*it);
 
             INFO("json: " << json);
 
@@ -606,7 +620,7 @@ SCENARIO("Parse Int Array") {
             parser.parse(&stream);
             
             std::vector<long> vec;
-            REQUIRE(parser.parseIntArray<long>(vec));
+            REQUIRE(parser.parseIntArray<long>(vec, inArray));
             REQUIRE(vec.size() == expected_vec.size());
 
             for(int i=0; i<vec.size(); i++) {
@@ -616,15 +630,17 @@ SCENARIO("Parse Int Array") {
     }
 
     GIVEN("invalid arrays") {
-        std::vector<const char*> parse {
-            "1,-2,3]",
-            "[1,-2,3",
-            "[1",
-            "[-",
+        std::vector<std::tuple<const char*, bool, std::vector<long>>> parse {
+            {"1,-2,3]", false, {}},
+            {"[1,-2,3", false, {1, -2}},
+            {"[1", false, {}},
+            {"[-", false, {}},
         };
 
         for(auto it=parse.begin(); it!=parse.end(); ++it) {
-            const char* json = *it;
+            const char* json = std::get<0>(*it);
+            bool inArray = std::get<1>(*it);
+            std::vector<long> expected_vec = std::get<2>(*it);
 
             INFO("json: " << json);
 
@@ -632,7 +648,12 @@ SCENARIO("Parse Int Array") {
             parser.parse(&stream);
             
             std::vector<long> vec;
-            REQUIRE_FALSE(parser.parseIntArray<long>(vec));
+            REQUIRE_FALSE(parser.parseIntArray<long>(vec, inArray));
+            REQUIRE(vec.size() == expected_vec.size());
+
+            for(int i=0; i<vec.size(); i++) {
+                REQUIRE(vec.at(i) == expected_vec.at(i));
+            }
         }
     }
 }
@@ -641,22 +662,28 @@ SCENARIO("Parse unsigned Int Array") {
     JsonParser parser;
 
     GIVEN("valid arrays") {
-        std::vector<std::tuple<const char*, std::vector<unsigned long>>> parse {
-            {"[1,2,3]", {1,2,3}},
-            {"[9268176913,1409571945,128568915]", {9268176913,1409571945,128568915}},
+        std::vector<std::tuple<const char*, bool, std::vector<unsigned long>>> parse {
+            {"[1,2,3]", false, {1,2,3}},
+            {"[9268176913,1409571945,128568915]", false, {9268176913,1409571945,128568915}},
 
             // Whitespaces
-            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", {1}},
-            {"[\n\r\t 1  \n\r\t ,\n\r\t 2\n\r\t ,\n\r\t 3\n\r\t ]", {1,2,3}},
+            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", false, {1}},
+            {"[\n\r\t 1  \n\r\t ,\n\r\t 2\n\r\t ,\n\r\t 3\n\r\t ]", false, {1,2,3}},
+            {"[1, 2\r\n\t 3, 4abcdefghijklmnopqrstuvwxyz5]", false, {1,23,45}},
 
             // Parse unordered int array: an array where each integer is a string 
-            {"[\"2\", \"1\", \"3\"]", {2,1,3}},
-            {"[\"-2\", \"-1\", \"-3\"]", {2,1,3}},
+            {"[\"2\", \"1\", \"3\"]", false, {2,1,3}},
+            {"[\"-2\", \"-1\", \"-3\"]", false, {2,1,3}},
+
+            // Don't save empty numbers
+            {"[1,,,2]", false, {1,2}},
+            {",,,1,2]", true, {1,2}},
         };
 
         for(auto it=parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            std::vector<unsigned long> expected_vec = std::get<1>(*it);
+            bool inArray = std::get<1>(*it);
+            std::vector<unsigned long> expected_vec = std::get<2>(*it);
 
             INFO("json: " << json);
 
@@ -664,7 +691,7 @@ SCENARIO("Parse unsigned Int Array") {
             parser.parse(&stream);
             
             std::vector<unsigned long> vec;
-            REQUIRE(parser.parseUIntArray<unsigned long>(vec));
+            REQUIRE(parser.parseUIntArray<unsigned long>(vec, inArray));
             REQUIRE(vec.size() == expected_vec.size());
 
             for(int i=0; i<vec.size(); i++) {
@@ -674,15 +701,17 @@ SCENARIO("Parse unsigned Int Array") {
     }
 
     GIVEN("invalid arrays") {
-        std::vector<const char*> parse {
-            "1,2,3]",
-            "[1,2,3",
-            "[1",
-            "[",
+        std::vector<std::tuple<const char*, bool, std::vector<long>>> parse {
+            {"1,2,3]", false, {}},
+            {"[1,2,3", false, {1, 2}},
+            {"[1", false, {}},
+            {"[", false, {}},
         };
 
         for(auto it=parse.begin(); it!=parse.end(); ++it) {
-            const char* json = *it;
+            const char* json = std::get<0>(*it);
+            bool inArray = std::get<1>(*it);
+            std::vector<long> expected_vec = std::get<2>(*it);
 
             INFO("json: " << json);
 
@@ -691,6 +720,11 @@ SCENARIO("Parse unsigned Int Array") {
             
             std::vector<unsigned long> vec;
             REQUIRE_FALSE(parser.parseUIntArray<unsigned long>(vec));
+            REQUIRE(vec.size() == expected_vec.size());
+
+            for(int i=0; i<vec.size(); i++) {
+                REQUIRE(vec.at(i) == expected_vec.at(i));
+            }
         }
     }
 }

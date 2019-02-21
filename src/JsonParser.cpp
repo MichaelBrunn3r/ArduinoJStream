@@ -231,35 +231,38 @@ namespace JStream {
     }
 
     template<typename T>
-    bool JsonParser::parseIntArray(std::vector<T>& vec) {
-        skipWhitespace();
+    bool JsonParser::parseIntArray(std::vector<T>& vec, bool inArray) {
+        if(!inArray) {
+            skipWhitespace();
 
-        if(stream->peek() != '[') return false;
-        stream->read();
-
-        while(stream->available() && !(JStream::isDecDigit(stream->peek()) || stream->peek() == '-')) stream->read();
+            if(stream->peek() != '[') return false;
+            stream->read();
+        }
 
         T num = 0;
         T sign = 1;
 
+        size_t digits = 0;
         char c;
         do {
             c = stream->read();
             switch(c) {
                 case ',':
-                    vec.push_back(num*sign); // Save read number
+                    if(digits > 0) vec.push_back(num*sign); // Save read number
                     num = 0; // Reset num
                     sign = 1;
+                    digits = 0;
 
                     break;
                 case ']':
-                    vec.push_back(num*sign);
+                    if(digits > 0) vec.push_back(num*sign);
                     return true;
                 case '-':
-                    sign = -1;
+                    if(digits == 0) sign = -1;
                     break;
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
                     num = num*10 + c - '0';
+                    digits++;
                     break;
             }
         } while(c>0);
@@ -267,32 +270,37 @@ namespace JStream {
         return false;
     }
 
-    template bool JsonParser::parseIntArray<char>(std::vector<char>& vec);
-    template bool JsonParser::parseIntArray<long>(std::vector<long>& vec);
+    template bool JsonParser::parseIntArray<char>(std::vector<char>& vec, bool inArray);
+    template bool JsonParser::parseIntArray<long>(std::vector<long>& vec, bool inArray);
 
     template<typename T>
-    bool JsonParser::parseUIntArray(std::vector<T>& vec) {
-        skipWhitespace();
+    bool JsonParser::parseUIntArray(std::vector<T>& vec, bool inArray) {
+        if(!inArray) {
+            skipWhitespace();
 
-        if(stream->peek() != '[') return false;
-        stream->read();
+            if(stream->peek() != '[') return false;
+            stream->read();
+        }
 
         T num = 0;
 
+        size_t digits = 0;
         char c;
         do {
             c = stream->read();
             switch(c) {
                 case ',':
-                    vec.push_back(num); // Save read number
+                    if(digits>0) vec.push_back(num); // Save read number
                     num = 0;
+                    digits = 0;
 
                     break;
                 case ']':
-                    vec.push_back(num); // Save read number
+                    if(digits>0) vec.push_back(num); // Save read number
                     return true;
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
                     num = num*10 + c - '0';
+                    digits++;
                     break;
             }
         } while(c>0);
@@ -300,8 +308,8 @@ namespace JStream {
         return false; // Stream ended without closing the array
     }
 
-    template bool JsonParser::parseUIntArray<byte>(std::vector<byte>& vec);
-    template bool JsonParser::parseUIntArray<unsigned long>(std::vector<unsigned long>& vec);
+    template bool JsonParser::parseUIntArray<byte>(std::vector<byte>& vec, bool inArray);
+    template bool JsonParser::parseUIntArray<unsigned long>(std::vector<unsigned long>& vec, bool inArray);
 
     /////////////
     // Private //

@@ -90,19 +90,18 @@ namespace JStream {
 
             /**
              * @brief Parses an array of integers
-             * 
-             * Assumes stream is positioned before the opening '['
+             * @param inArray Indicates the opening '[' was alread read
              */
             template <typename T>
-            bool parseIntArray(std::vector<T>& vec);
+            bool parseIntArray(std::vector<T>& vec, bool inArray=false);
 
             /**
              * @brief Parses an array of unsigned integers
-             * 
-             * Assumes stream is positioned before the opening '['
+             * @param inArray Indicates the opening '[' was alread read
              */
             template <typename T>
-            bool parseUIntArray(std::vector<T>& vec);
+            bool parseUIntArray(std::vector<T>& vec, bool inArray=false);
+
 
             
         private:
