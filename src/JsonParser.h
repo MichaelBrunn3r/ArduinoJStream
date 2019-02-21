@@ -90,21 +90,15 @@ namespace JStream {
              */
             bool readString(String& buf, bool inStr=false);
 
+
+            bool parseInt();
+
             /**
              * @brief Parses an array of integers
              * @param inArray Indicates the opening '[' was alread read
              */
             template <typename T>
             bool parseIntArray(std::vector<T>& vec, bool inArray=false);
-
-            /**
-             * @brief Parses an array of unsigned integers
-             * @param inArray Indicates the opening '[' was alread read
-             */
-            template <typename T>
-            bool parseUIntArray(std::vector<T>& vec, bool inArray=false);
-
-
             
         private:
             Stream* stream;
