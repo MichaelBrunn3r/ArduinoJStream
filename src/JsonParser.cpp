@@ -176,7 +176,7 @@ namespace JStream {
         return true;
     }
     
-    bool JsonParser::exit(size_t levels) {
+    bool JsonParser::exitCollection(size_t levels) {
         if(levels == 0) return true;
 
         char c;
@@ -194,6 +194,16 @@ namespace JStream {
                     skipString(true);
                     break;
             }
+        } while(c>0);
+
+        return false;
+    }
+
+    bool JsonParser::skipCollection() {
+        char c;
+        do {
+            c = stream->read();
+            if(c == '[' || c == '{') return exitCollection();
         } while(c>0);
 
         return false;
@@ -329,8 +339,7 @@ namespace JStream {
             switch(c) {
                 case '{': case '[':
                     // Start of a nested object
-                    stream->read();
-                    exit(1);
+                    skipCollection();
 
                     break;
                 case '}': case ']':

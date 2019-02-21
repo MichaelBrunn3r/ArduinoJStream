@@ -76,7 +76,9 @@ namespace JStream {
              * 
              * @param levels The number of parent objects/arrays to exit
              */
-            bool exit(size_t levels=1);
+            bool exitCollection(size_t levels=1);
+            /** @brief Skips the next object/array in the stream */
+            bool skipCollection();
             /** 
              * @brief Reads over a string in the stream
              * @param inStr Indicates if the stream is positioned either inside or at the opening '"' of the string  
