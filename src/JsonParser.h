@@ -90,8 +90,8 @@ namespace JStream {
              */
             bool readString(String& buf, bool inStr=false);
 
-
-            bool parseInt();
+            bool parseInt(long& num);
+            long parseInt();
 
             /**
              * @brief Parses an array of integers

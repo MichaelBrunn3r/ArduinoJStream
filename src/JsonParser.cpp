@@ -240,6 +240,45 @@ namespace JStream {
         return false; // Stream ended without closing the string
     }
 
+    bool JsonParser::parseInt(long& num) {
+        num = 0;    
+        long sign = 1;
+        
+        skipWhitespace();
+        if(stream->peek() == '-') {
+            stream->read();
+            sign = -1;
+        }
+
+        bool moreThanOneDigit = false;
+        char c;
+        do {
+            c = stream->peek();
+            switch(c) {
+                case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
+                    num = num*10 + stream->read() - '0';
+                    moreThanOneDigit = true;
+                    break;
+                case '\r': case '\n': case '\t': case ' ':
+                    stream->read();
+                    break;
+                default:
+                    goto END_PARSING;
+            }
+        } while(c>0);
+        END_PARSING:
+
+        if(!moreThanOneDigit) return false;
+        
+        num *= sign;
+        return true;
+    }
+
+    long JsonParser::parseInt() {
+        long result;
+        return parseInt(result) ? result : 0;
+    }
+
     template<typename T>
     bool JsonParser::parseIntArray(std::vector<T>& vec, bool inArray) {
         if(!inArray) {
@@ -280,6 +319,7 @@ namespace JStream {
         return false;
     }
 
+    template bool JsonParser::parseIntArray<byte>(std::vector<byte>& vec, bool inArray);
     template bool JsonParser::parseIntArray<char>(std::vector<char>& vec, bool inArray);
     template bool JsonParser::parseIntArray<long>(std::vector<long>& vec, bool inArray);
 

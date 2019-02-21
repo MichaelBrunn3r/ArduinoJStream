@@ -550,65 +550,64 @@ SCENARIO("JsonParser::find", "[find]") {
     
 }
 
-SCENARIO("JsonParser::compilePath", "[compilePath]") {
+SCENARIO("JsonParser::parseInt") {
     JsonParser parser;
 
-    GIVEN("Valid paths") {
-        std::vector<std::tuple<const char*, std::vector<PathSegment>>> parse = {
-            {"thekey", {{"thekey"}}},
-            {"obj1/thekey", {{"obj1"}, {"thekey"}}},
-            {"[42]", {{42}}},
+    GIVEN("Valid Ints") {
+        std::vector<std::tuple<const char*, long, const char*>> parse {
+            {"1", 1, ""},
+            {"0", 0, ""},
+            {"-1", -1, ""},
+            {"1-", 1, "-"},
+            {"123 3    a", 1233, "a"},
 
-            // Escaped chars
-            {"\\\"thekey", {{"\\\"thekey"}}},
-            {"\\/thekey\\/", {{"/thekey/"}}},
-            {"\\[]thekey\\[]", {{"[]thekey[]"}}},
-            {"]\\[thekey]\\[", {{"][thekey]["}}},
-            
-            // Whitespace
-            {"\n\r\t thekey \n\r\t ", {{"\n\r\t thekey \n\r\t "}}},
-            {"\n\r\t obj1 \n\r\t /\n\r\t thekey \n\r\t ", {{"\n\r\t obj1 \n\r\t "}, {"\n\r\t thekey \n\r\t "}}},
+            // Whitespaces
+            {"\r\n\t -\r\n\t 1\r\n\t ", -1, ""},
+            {"\r\n\t -\r\n\t 1\r\n\t 2\r\n\t 3", -123, ""},
+            {"\r\n\t -\r\n\t 1\r\n\t 2\r\n\t 3", -123, ""},
 
-            // Nesting
-            {"obj1/obj2/obj3", {{"obj1"}, {"obj2"}, {"obj3"}}},
-            {"[1][2][3]", {{1}, {2}, {3}}},
-            {"obj[1][2][3]", {{"obj"}, {1}, {2}, {3}}},
-            {"obj1[1]/obj2[2]/obj3[3]/obj4", {{"obj1"}, {1}, {"obj2"}, {2}, {"obj3"}, {3}, {"obj4"}}},
+            // Ignore leading zeros
+            {"0000123", 123, ""},
+            {"000 000 000 000 123", 123, ""},
+            {"-0000123", -123, ""},
         };
 
-        for(auto it=parse.begin(); it!=parse.end(); ++it) {
-            const char* path_str = std::get<0>(*it);
-            std::vector<PathSegment> expected_vec = std::get<1>(*it);
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            long expected_int = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
-            INFO("path: " << path_str);
+            INFO("json: " << json);
 
-            Path path = Path(path_str);
-            REQUIRE(path.size() == expected_vec.size());
-            for(size_t i=0; i<path.size(); i++) {
-                REQUIRE(path.at(i).type == expected_vec.at(i).type);
-                if(path.at(i).type == PathSegmentType::OFFSET) {
-                    REQUIRE(path.at(i).val.offset == expected_vec.at(i).val.offset);
-                } else {
-                    CHECK_THAT(path.at(i).val.key, Catch::Matchers::Equals(expected_vec.at(i).val.key));
-                }
-            }
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+
+            long num;
+            REQUIRE(parser.parseInt(num));
+            REQUIRE(num == expected_int);
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 
-    // GIVEN("Invalid paths") {
-    //     std::vector<std::tuple<const char*>> parse = {
-    //         {"obj1[1]obj2"}
-    //     };
+    GIVEN("Invalid Ints") {
+        std::vector<std::tuple<const char*, const char*>> parse {
+            {"", ""}, // No digits
+        };
 
-    //     for(auto it=parse.begin(); it!=parse.end(); ++it) {
-    //         const char* path = std::get<0>(*it);
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            const char* json_after_exec = std::get<1>(*it);
 
-    //         INFO("path: " << path);
+            INFO("json: " << json);
 
-    //         std::vector<JsonParser::PathSegment> vec;
-    //         REQUIRE(parser.compilePath(vec, path) == NULL);
-    //     }
-    // }
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+
+            long num;
+            REQUIRE_FALSE(parser.parseInt(num));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
 }
 
 SCENARIO("Parse Int Array") {
@@ -689,6 +688,67 @@ SCENARIO("Parse Int Array") {
             }
         }
     }
+}
+
+SCENARIO("JsonParser::compilePath", "[compilePath]") {
+    JsonParser parser;
+
+    GIVEN("Valid paths") {
+        std::vector<std::tuple<const char*, std::vector<PathSegment>>> parse = {
+            {"thekey", {{"thekey"}}},
+            {"obj1/thekey", {{"obj1"}, {"thekey"}}},
+            {"[42]", {{42}}},
+
+            // Escaped chars
+            {"\\\"thekey", {{"\\\"thekey"}}},
+            {"\\/thekey\\/", {{"/thekey/"}}},
+            {"\\[]thekey\\[]", {{"[]thekey[]"}}},
+            {"]\\[thekey]\\[", {{"][thekey]["}}},
+            
+            // Whitespace
+            {"\n\r\t thekey \n\r\t ", {{"\n\r\t thekey \n\r\t "}}},
+            {"\n\r\t obj1 \n\r\t /\n\r\t thekey \n\r\t ", {{"\n\r\t obj1 \n\r\t "}, {"\n\r\t thekey \n\r\t "}}},
+
+            // Nesting
+            {"obj1/obj2/obj3", {{"obj1"}, {"obj2"}, {"obj3"}}},
+            {"[1][2][3]", {{1}, {2}, {3}}},
+            {"obj[1][2][3]", {{"obj"}, {1}, {2}, {3}}},
+            {"obj1[1]/obj2[2]/obj3[3]/obj4", {{"obj1"}, {1}, {"obj2"}, {2}, {"obj3"}, {3}, {"obj4"}}},
+        };
+
+        for(auto it=parse.begin(); it!=parse.end(); ++it) {
+            const char* path_str = std::get<0>(*it);
+            std::vector<PathSegment> expected_vec = std::get<1>(*it);
+
+            INFO("path: " << path_str);
+
+            Path path = Path(path_str);
+            REQUIRE(path.size() == expected_vec.size());
+            for(size_t i=0; i<path.size(); i++) {
+                REQUIRE(path.at(i).type == expected_vec.at(i).type);
+                if(path.at(i).type == PathSegmentType::OFFSET) {
+                    REQUIRE(path.at(i).val.offset == expected_vec.at(i).val.offset);
+                } else {
+                    CHECK_THAT(path.at(i).val.key, Catch::Matchers::Equals(expected_vec.at(i).val.key));
+                }
+            }
+        }
+    }
+
+    // GIVEN("Invalid paths") {
+    //     std::vector<std::tuple<const char*>> parse = {
+    //         {"obj1[1]obj2"}
+    //     };
+
+    //     for(auto it=parse.begin(); it!=parse.end(); ++it) {
+    //         const char* path = std::get<0>(*it);
+
+    //         INFO("path: " << path);
+
+    //         std::vector<JsonParser::PathSegment> vec;
+    //         REQUIRE(parser.compilePath(vec, path) == NULL);
+    //     }
+    // }
 }
 
 /////////////////////
