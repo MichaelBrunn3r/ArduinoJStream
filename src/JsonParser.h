@@ -93,6 +93,9 @@ namespace JStream {
             bool parseInt(long& num);
             long parseInt();
 
+            bool parseDecimal(double& num);
+            double parseDecimal();
+
             /**
              * @brief Parses an array of integers
              * @param inArray Indicates the opening '[' was alread read

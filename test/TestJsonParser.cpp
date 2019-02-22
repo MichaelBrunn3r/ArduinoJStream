@@ -610,6 +610,52 @@ SCENARIO("JsonParser::parseInt") {
     }
 }
 
+SCENARIO("JsonParser::parseDecimal") {
+    JsonParser parser;
+
+    GIVEN("Valid Decimals") {
+        std::vector<std::tuple<const char*, double, const char*>> parse {
+            // Ints
+            {"1", 1, ""},
+            {"0", 0, ""},
+            {"-1", -1, ""},
+            {"1-", 1, "-"},
+            {"123 3    a", 1233, "a"},
+
+            // Decimals
+            {"1.0", 1, ""},
+            {"1.1", 1.1, ""},
+            {"1.1234567", 1.1234567, ""},
+
+            // Whitespaces
+            {"\r\n\t -\r\n\t 1\r\n\t ", -1, ""},
+            {"\r\n\t -\r\n\t 1\r\n\t 2\r\n\t 3", -123, ""},
+            {"\r\n\t -\r\n\t 1\r\n\t 2\r\n\t 3", -123, ""},
+
+            // Ignore leading zeros
+            {"0000123", 123, ""},
+            {"000 000 000 000 123", 123, ""},
+            {"-0000123", -123, ""},
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            double expected_decimal = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
+
+            INFO("json: " << json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+
+            double num;
+            REQUIRE(parser.parseDecimal(num));
+            REQUIRE(num == expected_decimal);
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+}
+
 SCENARIO("Parse Int Array") {
     JsonParser parser;
 

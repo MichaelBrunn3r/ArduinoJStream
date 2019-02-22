@@ -279,6 +279,70 @@ namespace JStream {
         return parseInt(result) ? result : 0;
     }
 
+    bool JsonParser::parseDecimal(double& num) {
+        num = 0;
+        double sign = 1;
+
+        skipWhitespace();
+        if(stream->peek() == '-') {
+            stream->read();
+            sign = -1;
+        }
+        
+        // Parse Int
+        bool moreThanOneDigit = false; 
+        char c;
+        while(c = stream->peek()) {
+            switch(c) {
+                case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
+                    num = num*10 + stream->read() - '0';
+                    moreThanOneDigit = true;
+                    break;
+                case '\r': case '\n': case '\t': case ' ':
+                    stream->read();
+                    break;
+                default:
+                    goto END_PARSING_INT;
+            }
+        }
+        END_PARSING_INT:
+
+        if(!moreThanOneDigit) return false;
+
+        // Parse Decimals
+        if(c == '.') {
+            stream->read();
+
+            moreThanOneDigit = false;
+            double fraction = 0.1;
+            while(c = stream->peek()) {
+                switch(c) {
+                    case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
+                        num += (stream->read() - '0') * fraction;
+                        fraction *= 0.1;
+                        moreThanOneDigit = true;
+                        break;
+                    case '\r': case '\n': case '\t': case ' ':
+                        stream->read();
+                        break;
+                    default:
+                        goto END_PARSING_DECIMAL;
+                }
+            }
+            END_PARSING_DECIMAL:
+
+            if(!moreThanOneDigit) return false;
+        }
+        
+        num *= sign;
+        return true;
+    }
+
+    double JsonParser::parseDecimal() {
+        double result;
+        return parseDecimal(result) ? result : 0.0;
+    }
+
     template<typename T>
     bool JsonParser::parseIntArray(std::vector<T>& vec, bool inArray) {
         if(!inArray) {
