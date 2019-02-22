@@ -400,23 +400,20 @@ namespace JStream {
         size_t nesting = 0;
 
         char c;
-        do {
-            c = stream->peek();
+        while((c = stream->read()) > 0) {
             switch(c) {
                 case '{': case '[':
                     // Start of a nested object
-                    skipCollection();
+                    exitCollection();
 
                     break;
                 case '}': case ']':
                     return false; // End of current object/array, no next key/value
                 case '"':
                     // Skip String
-                    stream->read(); // Enter String
                     skipString(true); // Exit String
                     break;
                 case ',':
-                    stream->read();
                     if(nesting > 0) break;
                         
                     // Reached start of next key/value
@@ -427,10 +424,8 @@ namespace JStream {
                     }
                     
                     break;
-                default:
-                    stream->read();
             }
-        } while(c>0);
+        }
 
         // Stream ended, no next key/value
         return false;

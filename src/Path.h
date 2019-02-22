@@ -21,7 +21,7 @@ namespace JStream
              * Formatting:
              *  - "[n]": OFFSET segment, n-th child element in the parent json array/object
              *  - "akey": KEY segment, child "akey" of the parent json object
-             *  - "key1/key2[2]/key3": KEY segments are seperated from other segments with a '/'
+             *  - "key1/key2[2]/key3": KEY segments are seperated from previous segments with a '/'
              *  - "akey[2][2]": OFFSET segments can be appended directly to other segments
              */
             bool append(const char* path_str);

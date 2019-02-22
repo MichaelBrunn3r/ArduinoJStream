@@ -19,7 +19,7 @@ namespace JStream {
              * 
              * Stream position:
              * - on success: First char of the n-th value
-             * - on fail: Closing ']' of the current array
+             * - on fail: After closing ']' of the current array
              * 
              * Behaviour:
              * - Assumes the current parent collection is an array
@@ -31,7 +31,7 @@ namespace JStream {
              * 
              * Stream position:
              * - on success: First char of the value corresponding to the key
-             * - on fail: Closing '}' of the current object
+             * - on fail: After closing '}' of the current object
              * 
              * Behaviour:
              * - Assumes the current parent collection is an object
@@ -46,7 +46,7 @@ namespace JStream {
              * 
              * Stream position:
              * - on success: First char of the value corresponding to the key
-             * - on fail: Stream is read until the end of the current object
+             * - on fail: After closing '}' of the current object
              * 
              * Behaviour:
              * - Treats the current parent collection as an object
@@ -55,16 +55,26 @@ namespace JStream {
              * @return true If the key was found in the current object(/array), false otherwise
              */
             bool findKey(const char* thekey);
-            /** @brief Reads the stream until it finds the value at the given path. */
+            /** 
+             * @brief Reads the stream until it finds the value at the given path. 
+             * 
+             * Stream position:
+             * - on success: First char of the value corresponding to the key
+             * - on fail: After closing '}' of the current object
+             */
             bool find(Path& path);
             /** 
              * @brief Reads the stream until it finds the value at the given path. 
              * 
+             * Stream position:
+             * - on success: First char of the value corresponding to the key
+             * - on fail: After closing '}' of the current object
+             * 
              * Formatting:
              *  - "[..]": OFFSET segment, n-th element in a json array/object
              *  - "akey": KEY segment, child of a json object
-             *  - "key1/key2[2]/key3": KEY segments are seperated from other segments with a '/'
-             *  - "akey[2][2]": OFFSET segments can be appended directly to other segments 
+             *  - "key1/key2[2]/key3": KEY segments are seperated from previous segments with a '/'
+             *  - "akey[2][2]": OFFSET segments can be appended directly to previous segments 
              */
             bool find(const char* path);
             /**
@@ -109,11 +119,11 @@ namespace JStream {
             /**
              * @brief Reads the stream until the start of the n-th succeeding key/value in the current object/array
              * 
-             * If n=0, method returns immediately.
-             * This method stops reading at the first char of the key/value (keys allways begin with '"').
-             * If it comes across the closing '}'/']' of the current object/array, it stops reading, since no next key/value exists.
+             * Stream position:
+             * - on success: First char of the n-th value
+             * - on fail: After closing ']' of the current array
              * 
-             * @return true if the n-th succeeding key/value was found
+             * If n=0, method returns immediately.
              */
             bool next(size_t n=1);
             void skipWhitespace();
