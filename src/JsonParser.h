@@ -100,11 +100,8 @@ namespace JStream {
              */
             bool readString(String& buf, bool inStr=false);
 
-            bool parseInt(long& num);
-            long parseInt();
-
-            bool parseDecimal(double& num);
-            double parseDecimal();
+            long parseInt(long defaultVal=0);
+            double parseNum(double defaultVal=0.0);
 
             /**
              * @brief Parses an array of integers

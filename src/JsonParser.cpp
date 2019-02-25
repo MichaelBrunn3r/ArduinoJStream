@@ -240,8 +240,8 @@ namespace JStream {
         return false; // Stream ended without closing the string
     }
 
-    bool JsonParser::parseInt(long& num) {
-        num = 0;    
+    long JsonParser::parseInt(long defaultVal) {
+        long result = 0;    
         long sign = 1;
         
         skipWhitespace();
@@ -256,7 +256,7 @@ namespace JStream {
             c = stream->peek();
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    num = num*10 + stream->read() - '0';
+                    result = result*10 + stream->read() - '0';
                     moreThanOneDigit = true;
                     break;
                 case '\r': case '\n': case '\t': case ' ':
@@ -268,19 +268,13 @@ namespace JStream {
         } while(c>0);
         END_PARSING:
 
-        if(!moreThanOneDigit) return false;
+        if(!moreThanOneDigit) return defaultVal;
         
-        num *= sign;
-        return true;
+        return result*sign;
     }
 
-    long JsonParser::parseInt() {
-        long result;
-        return parseInt(result) ? result : 0;
-    }
-
-    bool JsonParser::parseDecimal(double& num) {
-        num = 0;
+    double JsonParser::parseNum(double defaultVal) {
+        double result = 0;
         double sign = 1;
 
         skipWhitespace();
@@ -295,7 +289,7 @@ namespace JStream {
         while(c = stream->peek()) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    num = num*10 + stream->read() - '0';
+                    result = result*10 + stream->read() - '0';
                     moreThanOneDigit = true;
                     break;
                 case '\r': case '\n': case '\t': case ' ':
@@ -307,7 +301,7 @@ namespace JStream {
         }
         END_PARSING_INT:
 
-        if(!moreThanOneDigit) return false;
+        if(!moreThanOneDigit) return defaultVal;
 
         // Parse Decimals
         if(c == '.') {
@@ -315,10 +309,11 @@ namespace JStream {
 
             moreThanOneDigit = false;
             double fraction = 0.1;
-            while(c = stream->peek()) {
+            do {
+                c = stream->peek();
                 switch(c) {
                     case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                        num += (stream->read() - '0') * fraction;
+                        result += (stream->read() - '0') * fraction;
                         fraction *= 0.1;
                         moreThanOneDigit = true;
                         break;
@@ -328,22 +323,54 @@ namespace JStream {
                     default:
                         goto END_PARSING_DECIMAL;
                 }
-            }
+            } while(c>0);
             END_PARSING_DECIMAL:
 
-            if(!moreThanOneDigit) return false;
+            if(!moreThanOneDigit) return defaultVal;
+        }
+
+        if(c == 'e' || c == 'E') {
+            stream->read();
+
+            skipWhitespace();
+
+            c = stream->peek();
+
+            bool expIsNeg = false;
+            if(c == '-' || c == '+') {
+                expIsNeg = (c == '-');
+                stream->read();
+            }
+
+            moreThanOneDigit = false;
+            size_t exponent = 0;
+            do {
+                c = stream->peek();
+                switch(c) {
+                    case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
+                        exponent = exponent*10 + stream->read() - '0'; 
+                        moreThanOneDigit = true;
+                        break;
+                    case '\r': case '\n': case '\t': case ' ':
+                        stream->read();
+                        break;
+                    default:
+                        goto END_PARSING_EXPONENT;
+                }
+            } while(c>0);
+            END_PARSING_EXPONENT:
+
+            if(!moreThanOneDigit) return defaultVal;
+
+            for(size_t i=0; i<exponent; i++) {
+                result *= expIsNeg ? 0.1 : 10.0;
+            }
         }
         
-        num *= sign;
-        return true;
+        return result*sign;
     }
-
-    double JsonParser::parseDecimal() {
-        double result;
-        return parseDecimal(result) ? result : 0.0;
-    }
-
     template<typename T>
+
     bool JsonParser::parseIntArray(std::vector<T>& vec, bool inArray) {
         if(!inArray) {
             skipWhitespace();
