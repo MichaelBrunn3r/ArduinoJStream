@@ -664,13 +664,16 @@ SCENARIO("JsonParser::parseNum") {
             {"1e012", 1000000000000, ""},
             {"1e+02", 100, ""},
             {"1e-02", 0.01, ""},
+
+            {"18446744073709551615", 18446744073709551615.0, ""}, // ULONG_MAX
+            {"98446744073709551615", 98446744073709551615.0, ""},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
             double expected_decimal = std::get<1>(*it);
             const char* json_after_exec = std::get<2>(*it);
-
+            
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
@@ -683,7 +686,7 @@ SCENARIO("JsonParser::parseNum") {
             std::string decimal_str = sstream.str();
 
             INFO("result: " << decimal_str);
-            REQUIRE(std::fabs(expected_decimal-decimal) <= std::fabs(expected_decimal) * 0.000000000001);
+            REQUIRE(std::fabs(expected_decimal-decimal) <= 0.000000000001);
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }

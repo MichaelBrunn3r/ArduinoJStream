@@ -1,6 +1,7 @@
 #include "JsonParser.h"
 #include <JsonUtils.h>
 #include <cstring>
+#include <limits.h>
 
 namespace JStream {
     JsonParser::JsonParser() {}
@@ -284,12 +285,20 @@ namespace JStream {
         }
         
         // Parse Int
-        bool moreThanOneDigit = false; 
+        unsigned long _int = 0;
+        bool fitsInLong = true;
+        bool moreThanOneDigit = false;
         char c;
         while(c = stream->peek()) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    result = result*10 + stream->read() - '0';
+                    if(fitsInLong && _int > ULONG_MAX/100 ) {
+                        fitsInLong = false;
+                        result = _int;
+                    }
+                    if(fitsInLong) _int = _int*10 + stream->read() - '0';
+                    else result = result*10 + stream->read() - '0';
+
                     moreThanOneDigit = true;
                     break;
                 case '\r': case '\n': case '\t': case ' ':
@@ -302,6 +311,7 @@ namespace JStream {
         END_PARSING_INT:
 
         if(!moreThanOneDigit) return defaultVal;
+        if(fitsInLong) result = _int;
 
         // Parse Decimals
         if(c == '.') {
@@ -369,8 +379,8 @@ namespace JStream {
         
         return result*sign;
     }
-    template<typename T>
 
+    template<typename T>
     bool JsonParser::parseIntArray(std::vector<T>& vec, bool inArray) {
         if(!inArray) {
             skipWhitespace();
