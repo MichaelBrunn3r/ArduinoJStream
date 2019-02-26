@@ -288,7 +288,7 @@ namespace JStream {
         while(c = stream->peek()) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    if(fitsInLong && _int > ULONG_MAX/100 ) {
+                    if(fitsInLong && _int > (ULONG_MAX-9)/10 ) {
                         fitsInLong = false;
                         result = _int;
                     }
@@ -296,9 +296,6 @@ namespace JStream {
                     else result = result*10 + stream->read() - '0';
 
                     moreThanOneDigit = true;
-                    break;
-                case '\r': case '\n': case '\t': case ' ':
-                    stream->read();
                     break;
                 default:
                     goto END_PARSING_INT;
@@ -322,9 +319,6 @@ namespace JStream {
                         result += (stream->read() - '0') * fraction;
                         fraction *= 0.1;
                         moreThanOneDigit = true;
-                        break;
-                    case '\r': case '\n': case '\t': case ' ':
-                        stream->read();
                         break;
                     default:
                         goto END_PARSING_DECIMAL;
@@ -353,9 +347,6 @@ namespace JStream {
                     case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
                         exponent = exponent*10 + stream->read() - '0'; 
                         moreThanOneDigit = true;
-                        break;
-                    case '\r': case '\n': case '\t': case ' ':
-                        stream->read();
                         break;
                     default:
                         goto END_PARSING_EXPONENT;
