@@ -12,12 +12,8 @@ namespace JStream {
     }
 
     bool JsonParser::atEnd() {
-        skipWhitespace();
-
-        if(!stream->available()) return false;
-
-        char c = stream->peek();
-        return c != '}' && c != ']';
+        char c = skipWhitespace();
+        return c>0 && c != '}' && c != ']';
     }
 
     bool JsonParser::nextVal(size_t n) {
@@ -39,9 +35,9 @@ namespace JStream {
                 if(!readString(*buf, true)) continue;
             }
 
-            skipWhitespace();
+            char c = skipWhitespace();
 
-            if(stream->peek() != ':') continue;
+            if(c != ':') continue;
             stream->read();
 
             skipWhitespace();
@@ -92,9 +88,9 @@ namespace JStream {
                 continue; // try matching next key
             } else stream->read(); // Read closing '"'
 
-            skipWhitespace(); // Whitespace between key and ':'
+            char c = skipWhitespace(); // Whitespace between key and ':'
 
-            if(stream->peek() != ':') continue; // No ':' after matched string -> not a valid json key -> try matching next key
+            if(c != ':') continue; // No ':' after matched string -> not a valid json key -> try matching next key
             else stream->read();
 
             skipWhitespace(); // Whitespace before value (e.g "'key':   123")
@@ -245,16 +241,15 @@ namespace JStream {
         long result = 0;    
         long sign = 1;
         
-        skipWhitespace();
-        if(stream->peek() == '-') {
+        char c = skipWhitespace();
+        if(c == '-') {
             stream->read();
+            c = stream->peek();
             sign = -1;
         }
 
         bool moreThanOneDigit = false;
-        char c;
-        do {
-            c = stream->peek();
+        while(c>0) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
                     result = result*10 + stream->read() - '0';
@@ -266,7 +261,8 @@ namespace JStream {
                 default:
                     goto END_PARSING;
             }
-        } while(c>0);
+            c = stream->peek();
+        }
         END_PARSING:
 
         if(!moreThanOneDigit) return defaultVal;
@@ -278,9 +274,10 @@ namespace JStream {
         double result = 0;
         double sign = 1;
 
-        skipWhitespace();
-        if(stream->peek() == '-') {
+        char c = skipWhitespace();
+        if(c == '-') {
             stream->read();
+            c = stream->peek();
             sign = -1;
         }
         
@@ -288,7 +285,6 @@ namespace JStream {
         unsigned long _int = 0;
         bool fitsInLong = true;
         bool moreThanOneDigit = false;
-        char c;
         while(c = stream->peek()) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
@@ -342,10 +338,7 @@ namespace JStream {
         if(c == 'e' || c == 'E') {
             stream->read();
 
-            skipWhitespace();
-
-            c = stream->peek();
-
+            c = skipWhitespace();
             bool expIsNeg = false;
             if(c == '-' || c == '+') {
                 expIsNeg = (c == '-');
@@ -383,36 +376,38 @@ namespace JStream {
     template<typename T>
     bool JsonParser::parseIntArray(std::vector<T>& vec, bool inArray) {
         if(!inArray) {
-            skipWhitespace();
+            char c = skipWhitespace();
 
-            if(stream->peek() != '[') return false;
+            if(c != '[') return false;
             stream->read();
         }
 
         T num = 0;
         T sign = 1;
 
-        size_t digits = 0;
+        bool moreThanOneDigits = false;
         char c;
         do {
             c = stream->read();
             switch(c) {
                 case ',':
-                    if(digits > 0) vec.push_back(num*sign); // Save read number
-                    num = 0; // Reset num
+                    if(moreThanOneDigits) {
+                        vec.push_back(num*sign); // Save read number
+                        num = 0; // Reset num
+                        moreThanOneDigits = false;
+                    }
                     sign = 1;
-                    digits = 0;
 
                     break;
                 case ']':
-                    if(digits > 0) vec.push_back(num*sign);
+                    if(moreThanOneDigits) vec.push_back(num*sign);
                     return true;
                 case '-':
-                    if(digits == 0) sign = -1;
+                    if(!moreThanOneDigits) sign = -1;
                     break;
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
                     num = num*10 + c - '0';
-                    digits++;
+                    moreThanOneDigits = true;
                     break;
             }
         } while(c>0);
@@ -468,12 +463,14 @@ namespace JStream {
         return false;
     }
 
-    void JsonParser::skipWhitespace() {
+    int JsonParser::skipWhitespace() {
         char c;
         do {
             c = stream->peek();
             if(isNotWhitespace(c)) break;
             stream->read();
         } while(c > 0);
+
+        return c;
     }
 }

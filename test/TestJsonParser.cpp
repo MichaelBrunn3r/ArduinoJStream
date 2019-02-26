@@ -921,22 +921,26 @@ SCENARIO("JsonParser::next", "[private, next]") {
 SCENARIO("JsonParser::skipWhitespace", "[private, skipWhitespace]") {
     JsonParser parser;
 
-    std::vector<std::tuple<const char*, const char*>> parse = {
-            {"", ""},
-            {"\t\n\r ", ""},
-            {"\"\t\n\r \"", "\"\t\n\r \""},
-            {"  ,", ","}
+    std::vector<std::tuple<const char*, const int, const char*>> parse = {
+            {"", 0, ""},
+            {"\t\n\r ", 0, ""},
+            {"\"\t\n\r \"", '\"', "\"\t\n\r \""},
+            {"  ,", ',' , ","},
+            {"abc", 'a' , "abc"},
+            {"\t\n\r abc", 'a' , "abc"},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            const char* json_after_exec = std::get<1>(*it);
+            const int expectedFirstNonWhitespace = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
             INFO("json: " << json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            parser.skipWhitespace();
+            char firstNonWhitespace = parser.skipWhitespace();
+            REQUIRE(firstNonWhitespace == expectedFirstNonWhitespace);
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
 }
