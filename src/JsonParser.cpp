@@ -271,6 +271,7 @@ namespace JStream {
     }
 
     double JsonParser::parseNum(double defaultVal) {
+        static unsigned long max = (ULONG_MAX-9)/10; 
         double result = 0;
         double sign = 1;
 
@@ -281,20 +282,25 @@ namespace JStream {
             sign = -1;
         }
         
+        unsigned long buf = 0;
+        unsigned long adjustment = 1;
+
         // Parse Int
-        unsigned long _int = 0;
-        bool fitsInLong = true;
         bool moreThanOneDigit = false;
         while(c = stream->peek()) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    if(fitsInLong && _int > (ULONG_MAX-9)/10 ) {
-                        fitsInLong = false;
-                        result = _int;
+                    // Prevent long overflow
+                    
+                    if(buf > max ) {
+                        if(result > 0) result *= adjustment;
+                        result += buf;
+                        adjustment = 1;
+                        buf = 0;
                     }
-                    if(fitsInLong) _int = _int*10 + stream->read() - '0';
-                    else result = result*10 + stream->read() - '0';
 
+                    buf = buf*10 + stream->read() - '0';
+                    adjustment *= 10;
                     moreThanOneDigit = true;
                     break;
                 default:
@@ -304,21 +310,35 @@ namespace JStream {
         END_PARSING_INT:
 
         if(!moreThanOneDigit) return defaultVal;
-        if(fitsInLong) result = _int;
+        result = result * adjustment + buf;
+        buf = 0;
 
         // Parse Decimals
+        // Parse Decimals
+        long decimalPlaces = 0;
         if(c == '.') {
             stream->read();
 
-            moreThanOneDigit = false;
-            double fraction = 0.1;
+            bool moreThanOneDecimal = false;
+            bool fitsInLong = true;
+            unsigned long adjustment = 1;
+            long _dec = 0;
             do {
                 c = stream->peek();
                 switch(c) {
                     case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                        result += (stream->read() - '0') * fraction;
-                        fraction *= 0.1;
-                        moreThanOneDigit = true;
+                        // Prevent long overflow
+                        if(buf > max ) {
+                            if(result > 0) result *= adjustment;
+                            result += buf;
+                            adjustment = 1;
+                            buf = 0;
+                        }
+
+                        buf = buf*10 + stream->read() - '0';
+                        
+                        decimalPlaces++;
+                        adjustment *= 10;
                         break;
                     default:
                         goto END_PARSING_DECIMAL;
@@ -326,7 +346,8 @@ namespace JStream {
             } while(c>0);
             END_PARSING_DECIMAL:
 
-            if(!moreThanOneDigit) return defaultVal;
+            if(decimalPlaces == 0) return defaultVal;
+            result = result * adjustment + buf;
         }
 
         if(c == 'e' || c == 'E') {
@@ -340,7 +361,7 @@ namespace JStream {
             }
 
             moreThanOneDigit = false;
-            size_t exponent = 0;
+            long exponent = 0;
             do {
                 c = stream->peek();
                 switch(c) {
@@ -355,11 +376,12 @@ namespace JStream {
             END_PARSING_EXPONENT:
 
             if(!moreThanOneDigit) return defaultVal;
-
-            for(size_t i=0; i<exponent; i++) {
-                result *= expIsNeg ? 0.1 : 10.0;
-            }
+            if(!expIsNeg) exponent *= -1;
+            decimalPlaces += exponent;
         }
+
+        if(decimalPlaces > 0) for(int i=0; i<decimalPlaces; i++) result *= 0.1;
+        else for(int i=0; i>decimalPlaces; i--) result *= 10;
         
         return result*sign;
     }
