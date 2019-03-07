@@ -663,6 +663,7 @@ SCENARIO("JsonParser::parseNum") {
             const char* json_after_exec = std::get<2>(*it);
             
             INFO("json: " << json);
+            INFO("expected: " << expected_decimal);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
@@ -696,11 +697,15 @@ SCENARIO("JsonParser::parseNum") {
             const char* json_after_exec = std::get<2>(*it);
             
             INFO("json: " << json);
+            INFO("expected: " << expected_decimal);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
 
             double decimal = parser.parseNum();
+
+            INFO("result: " << decimal);
+
             REQUIRE(std::fabs(expected_decimal-decimal) <= 0.000000000001);
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }

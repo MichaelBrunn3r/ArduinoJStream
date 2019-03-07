@@ -1,7 +1,7 @@
 #include "JsonParser.h"
 #include <JsonUtils.h>
 #include <cstring>
-#include <limits.h>
+#include <Internals/NumAccumulator.h>
 
 namespace JStream {
     JsonParser::JsonParser() {}
@@ -271,119 +271,51 @@ namespace JStream {
     }
 
     double JsonParser::parseNum(double defaultVal) {
-        static unsigned long max = (ULONG_MAX-9)/10; 
-        double result = 0;
-        double sign = 1;
+        Internals::NumAccumulator acc;
 
+        // Determine number sign
         char c = skipWhitespace();
         if(c == '-') {
             stream->read();
             c = stream->peek();
-            sign = -1;
+            acc.sign = -1;
         }
-        
-        unsigned long buf = 0;
-        unsigned long adjustment = 1;
 
-        // Parse Int
-        bool moreThanOneDigit = false;
+        // Parse number
         while(c = stream->peek()) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    // Prevent long overflow
-                    
-                    if(buf > max ) {
-                        if(result > 0) result *= adjustment;
-                        result += buf;
-                        adjustment = 1;
-                        buf = 0;
-                    }
+                    acc.addDigitToSegment(stream->read() - '0');
+                    break;
+                case '.':
+                    if(!acc.segmentHasAtLeastOneDigit) return defaultVal; // Check if prev segment has >=1 digits
 
-                    buf = buf*10 + stream->read() - '0';
-                    adjustment *= 10;
-                    moreThanOneDigit = true;
+                    stream->read();
+                    acc.setSegment(Internals::NumAccumulator::NumSegment::DECIMAL);
+                    break;
+                case 'e': case 'E':
+                    if(!acc.segmentHasAtLeastOneDigit) return defaultVal; // Check if prev segment has >=1 digits
+
+                    stream->read();
+                    acc.setSegment(Internals::NumAccumulator::NumSegment::EXPONENT);
+
+                    c = skipWhitespace();
+
+                    if(c == '+') stream->read();
+                    else if(c == '-') {
+                        stream->read();
+                        acc.expSign = -1;
+                    }
                     break;
                 default:
-                    goto END_PARSING_INT;
+                    goto END_PARSING;
             }
         }
-        END_PARSING_INT:
+        END_PARSING:
 
-        if(!moreThanOneDigit) return defaultVal;
-        result = result * adjustment + buf;
-        buf = 0;
-
-        // Parse Decimals
-        // Parse Decimals
-        long decimalPlaces = 0;
-        if(c == '.') {
-            stream->read();
-
-            bool moreThanOneDecimal = false;
-            bool fitsInLong = true;
-            unsigned long adjustment = 1;
-            long _dec = 0;
-            do {
-                c = stream->peek();
-                switch(c) {
-                    case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                        // Prevent long overflow
-                        if(buf > max ) {
-                            if(result > 0) result *= adjustment;
-                            result += buf;
-                            adjustment = 1;
-                            buf = 0;
-                        }
-
-                        buf = buf*10 + stream->read() - '0';
-                        
-                        decimalPlaces++;
-                        adjustment *= 10;
-                        break;
-                    default:
-                        goto END_PARSING_DECIMAL;
-                }
-            } while(c>0);
-            END_PARSING_DECIMAL:
-
-            if(decimalPlaces == 0) return defaultVal;
-            result = result * adjustment + buf;
-        }
-
-        if(c == 'e' || c == 'E') {
-            stream->read();
-
-            c = skipWhitespace();
-            bool expIsNeg = false;
-            if(c == '-' || c == '+') {
-                expIsNeg = (c == '-');
-                stream->read();
-            }
-
-            moreThanOneDigit = false;
-            long exponent = 0;
-            do {
-                c = stream->peek();
-                switch(c) {
-                    case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                        exponent = exponent*10 + stream->read() - '0'; 
-                        moreThanOneDigit = true;
-                        break;
-                    default:
-                        goto END_PARSING_EXPONENT;
-                }
-            } while(c>0);
-            END_PARSING_EXPONENT:
-
-            if(!moreThanOneDigit) return defaultVal;
-            if(!expIsNeg) exponent *= -1;
-            decimalPlaces += exponent;
-        }
-
-        if(decimalPlaces > 0) for(int i=0; i<decimalPlaces; i++) result *= 0.1;
-        else for(int i=0; i>decimalPlaces; i--) result *= 10;
+        if(!acc.segmentHasAtLeastOneDigit) return defaultVal;
         
-        return result*sign;
+        return acc.get();
     }
 
     template<typename T>
