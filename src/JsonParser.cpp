@@ -364,6 +364,49 @@ namespace JStream {
     template bool JsonParser::parseIntArray<char>(std::vector<char>& vec, bool inArray);
     template bool JsonParser::parseIntArray<long>(std::vector<long>& vec, bool inArray);
 
+    bool JsonParser::parseNumArray(std::vector<double>& vec) {
+        Internals::NumAccumulator acc;
+        char c;
+        do {
+            c = stream->read();
+            switch(c) {
+                case ',':
+                    if(acc.segmentHasAtLeastOneDigit) vec.push_back(acc.get()); // Save read number
+                    acc.reset();
+                    break;
+                case ']':
+                    if(acc.segmentHasAtLeastOneDigit) vec.push_back(acc.get()); // Save read number
+                    return true;
+                case '-':
+                    if(!acc.segmentHasAtLeastOneDigit) {
+                        if(acc.currentSegment == Internals::NumAccumulator::PRE_DECIMAL) acc.sign = -1;
+                        else if(acc.currentSegment == Internals::NumAccumulator::EXPONENT) acc.expSign = -1;
+                    }
+                    break;
+                case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
+                    acc.addDigitToSegment(c - '0');
+                    break;
+                case '.':
+                    if(!acc.segmentHasAtLeastOneDigit) {
+                        acc.reset();
+                        if(!next()) return true;
+                    }
+                    acc.setSegment(Internals::NumAccumulator::NumSegment::DECIMAL);
+                    break;
+                case 'e': case 'E':
+                    if(!acc.segmentHasAtLeastOneDigit) {
+                        acc.reset();
+                        if(!next()) return true;
+                    }
+
+                    acc.setSegment(Internals::NumAccumulator::NumSegment::EXPONENT);
+                    break;
+            }
+        } while(c>0);
+
+        return false;
+    }
+
     /////////////
     // Private //
     /////////////

@@ -19,6 +19,7 @@ namespace JStream {
                 double sign = 1;
                 unsigned long expSign = 1;
                 bool segmentHasAtLeastOneDigit = false; // Indicates if the current segment has at least 1 digit (i.e. is defined)
+                NumSegment currentSegment = PRE_DECIMAL;
 
             private:
                 double result = 0.0;
@@ -27,7 +28,6 @@ namespace JStream {
                 static const unsigned long buf_max = (ULONG_MAX-9)/10; // The maximum value the buffer can take
                 unsigned long tens_adjustment = 1;
                 long decimalPlaces = 0;
-                NumSegment currentSegment = PRE_DECIMAL;
 
             public:
                 void setSegment(NumSegment seg) {
