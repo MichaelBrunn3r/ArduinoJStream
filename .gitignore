@@ -8,3 +8,6 @@ bin
 .vscode
 /backup
 platformio.ini
+
+test/main\.cpp
+src/main\.cpp

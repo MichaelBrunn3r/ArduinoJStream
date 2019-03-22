@@ -6,6 +6,10 @@ namespace JStream {
         return c == '\t' || c == '\n' || c == '\r' || c == ' ';
     }
 
+    inline bool isNotWhitespace(const char c) {
+        return c > 32;
+    }
+
     /** @brief Returns true if a character is a valid json decimal digit **/
     inline bool isDecDigit(const char c) {
         return c >= 48 && c <= 57;
@@ -36,20 +40,6 @@ namespace JStream {
         return c == '"' || c == '\\' || c == '/' || c == 'b' || c == 'f' || c == 'n' || c == 'r' || c == 't';
     }
 
-    /** @brief Tries to escapes a character. Returns the same char, if the resulting char would not be valid in json. */
-    char escape(const char c) {
-        switch(c) {
-            // case '"': return '"';
-            // case '\\': return '\\';
-            // case '/': return '\/';
-
-            // sorted by suspected frequency
-            case 'n': return '\n';
-            case 't': return '\t';
-            case 'r': return '\r';
-            case 'b': return '\b';
-            case 'f': return '\f';
-            default: return c;
-        }
-    }
+    /** @brief Tries to escapes a character. Returns 0, if the char cannot be escaped. */
+    char escape(const char c);
 }

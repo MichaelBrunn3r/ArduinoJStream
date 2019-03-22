@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cstdlib>
 
+String::String() : std::string("") {}
 String::String(const char* str) : std::string(str) {}
 String::String(const char c) : std::string() {
     push_back(c);
@@ -50,4 +51,16 @@ unsigned char String::concat(char c) {
 
 long String::toInt(void) const {
     return std::atoi(this->c_str());
+}
+
+int String::compareTo(const String &s) const {
+    compare(s);
+}
+
+unsigned char String::equals(const String &s2) const {
+    return compare(s2) == 0;
+}
+
+unsigned char String::equals(const char *cstr) const {
+    return compare(cstr) == 0;
 }

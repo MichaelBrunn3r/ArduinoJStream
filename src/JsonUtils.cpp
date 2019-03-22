@@ -1,0 +1,17 @@
+#include "JsonUtils.h"
+
+namespace JStream {
+    char escape(const char c) {
+        switch(c) {
+            case '"': return '"';
+            case '\\': return '\\';
+            case '/': return '/'; 
+            case 'n': return '\n';
+            case 't': return '\t';
+            case 'r': return '\r';
+            case 'b': return '\b';
+            case 'f': return '\f';
+            default: return 0;
+        }
+    }
+}

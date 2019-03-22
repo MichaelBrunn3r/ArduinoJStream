@@ -8,6 +8,7 @@
 
 class String : public std::string {
     public:
+        String();
         String(const char* str);
         explicit String(const char c);
         String(int val, unsigned char base=DEC);
@@ -17,4 +18,8 @@ class String : public std::string {
         unsigned char concat(char c);
 
         long toInt(void) const;
+
+        int compareTo(const String &s) const;
+        unsigned char equals(const String &s) const;
+        unsigned char equals(const char *cstr) const;
 };
