@@ -708,6 +708,64 @@ SCENARIO("JsonParser::parseNum") {
     }
 }
 
+SCENARIO("JsonParser::parseBool") {
+    JsonParser parser;
+
+    GIVEN("valid booleans") {
+        std::vector<std::tuple<const char*, bool, const char*>> parse {
+            {"false", false, ""},
+            {"true", true, ""},
+            {"truefalse", true, "false"},
+            {"falsetrue", false, "true"},
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            bool expected_bool = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
+
+            CAPTURE(json);
+            INFO("expected:" << expected_bool);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+
+            bool result = parser.parseBool(!expected_bool);
+
+            CAPTURE(result);
+
+            REQUIRE(result == expected_bool);
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+
+    GIVEN("invalid booleans") {
+        std::vector<std::tuple<const char*, const char*>> parse {
+            {"f", ""},
+            {"t", ""},
+            {"fals", ""},
+            {"tru", ""},
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            const char* json_after_exec = std::get<1>(*it);
+
+            CAPTURE(json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+
+            bool result = parser.parseBool();
+
+            CAPTURE(result);
+
+            REQUIRE_FALSE(result);
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+}
+
 SCENARIO("Parse Int Array") {
     JsonParser parser;
 

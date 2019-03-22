@@ -102,6 +102,7 @@ namespace JStream {
 
             long parseInt(long defaultVal=0);
             double parseNum(double defaultVal=0.0);
+            bool parseBool(bool defaultVal=false);
 
             /**
              * @brief Parses an array of integers

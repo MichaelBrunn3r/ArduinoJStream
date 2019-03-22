@@ -318,6 +318,34 @@ namespace JStream {
         return acc.get();
     }
 
+    bool JsonParser::parseBool(bool defaultVal) {
+        static const char* str_true = "true";
+        static const char* str_false = "false";
+        
+        bool result;
+        char* compareTo;
+        char c = stream->peek();
+        if(c == 't') {
+            result = true;
+            compareTo = (char*)str_true + 1;
+        }
+        else if(c == 'f') {
+            result = false;
+            compareTo = (char*)str_false + 1;
+        }
+        else return defaultVal;
+
+        stream->read();
+
+        while(*compareTo) {
+            if(stream->peek() != *compareTo) return defaultVal;
+            stream->read();
+            compareTo++;
+        }
+
+        return result;
+    }
+
     template<typename T>
     bool JsonParser::parseIntArray(std::vector<T>& vec, bool inArray) {
         if(!inArray) {

@@ -7,7 +7,7 @@ SRC_EXCLUDE := $(SRC)/main.cpp
 SRC_FILES := $(filter-out $(SRC_EXCLUDE), $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/**/*.cpp)) 
 SRC_OBJ_FILES := $(patsubst %.cpp, $(BIN)/%.o, $(SRC_FILES))
 
-TEST_SRC_EXCLUDE := $(wildcard $(TEST_SRC)/Test*)
+TEST_SRC_EXCLUDE := $(wildcard $(TEST_SRC)/Test*) $(TEST_SRC)/main.cpp
 TEST_SRC_FILES := $(filter-out $(TEST_SRC_EXCLUDE), $(wildcard $(TEST_SRC)/*.cpp) $(wildcard $(TEST_SRC)/**/*.cpp) $(wildcard $(LIB_SRC)/**/*.cpp))
 TEST_OBJ_FILES := $(patsubst %.cpp, $(BIN)/%.o, $(TEST_SRC_FILES))
 

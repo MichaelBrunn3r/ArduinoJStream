@@ -9,4 +9,5 @@ bin
 /backup
 platformio.ini
 
+test/main\.cpp
 src/main\.cpp
