@@ -99,8 +99,21 @@ namespace JStream {
              * @param inStr Indicates if the stream is positioned either inside or at the opening '"' of the string 
              */
             bool readString(String& buf, bool inStr=false);
-
+            /**
+             * @brief Parses the next json integer
+             * 
+             * Skips leading Whitespaces, stops parsing at any non-numeric chars
+             * 
+             * @param defaultVal Default value, if not a single digit could be parsed
+             */
             long parseInt(long defaultVal=0);
+            /**
+             * @brief Parses the next json number
+             * 
+             * Skips leading Whitespaces, stops parsing at any non-numeric chars
+             * 
+             * @param defaultVal Default value, if not a single digit could be parsed
+             */
             double parseNum(double defaultVal=0.0);
             bool parseBool(bool defaultVal=false);
 
@@ -111,8 +124,18 @@ namespace JStream {
             template <typename T>
             bool parseIntArray(std::vector<T>& vec, bool inArray=false);
 
+            /**
+             * @brief Parses an array of json numbers
+             * @param inArray Indicates the opening '[' was alread read
+             */
             bool parseNumArray(std::vector<double>& vec, bool inArray=false);
-            
+
+            /**
+             * @brief Reads the stream until the first non-whitespace char
+             * 
+             * @return int The first non-whitespace in the stream, or -1 if the stream ended
+             */
+            int skipWhitespace();
         private:
             Stream* stream;
 
@@ -126,11 +149,5 @@ namespace JStream {
              * If n=0, method returns immediately.
              */
             bool next(size_t n=1);
-            /**
-             * @brief Reads the stream until the first non-whitespace char
-             * 
-             * @return int The first non-whitespace in the stream, or -1 if the stream ended
-             */
-            int skipWhitespace();
     };
 }

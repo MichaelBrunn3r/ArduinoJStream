@@ -255,9 +255,6 @@ namespace JStream {
                     result = result*10 + stream->read() - '0';
                     moreThanOneDigit = true;
                     break;
-                case '\r': case '\n': case '\t': case ' ':
-                    stream->read();
-                    break;
                 default:
                     goto END_PARSING;
             }

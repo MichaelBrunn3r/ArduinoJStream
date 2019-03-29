@@ -553,158 +553,116 @@ SCENARIO("JsonParser::find", "[find]") {
 SCENARIO("JsonParser::parseInt") {
     JsonParser parser;
 
-    GIVEN("Valid Ints") {
-        std::vector<std::tuple<const char*, long, const char*>> parse {
-            {"1", 1, ""},
-            {"0", 0, ""},
-            {"-1", -1, ""},
-            {"1-", 1, "-"},
-            {"123 3    a", 1233, "a"},
+    std::vector<std::tuple<const char*, long, const char*>> parse {
+        {"", 0, ""}, // No digits
+        {"1", 1, ""},
+        {"0", 0, ""},
+        {"-1", -1, ""},
+        {"1-", 1, "-"},
 
-            // Whitespaces
-            {"\r\n\t -\r\n\t 1\r\n\t ", -1, ""},
-            {"\r\n\t -\r\n\t 1\r\n\t 2\r\n\t 3", -123, ""},
-            {"\r\n\t -\r\n\t 1\r\n\t 2\r\n\t 3", -123, ""},
+        // Ignore leading zeros
+        {"0000123", 123, ""},
+        {"-0000123", -123, ""},
 
-            // Ignore leading zeros
-            {"0000123", 123, ""},
-            {"000 000 000 000 123", 123, ""},
-            {"-0000123", -123, ""},
-        };
+        // Skip leading whitespace
+        {"\r\n\t -1\r\n\t ", -1, "\r\n\t "},
 
-        for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            const char* json = std::get<0>(*it);
-            long expected_int = std::get<1>(*it);
-            const char* json_after_exec = std::get<2>(*it);
+        // Stop parsing at invalid chars
+        {"123 3    a", 123, " 3    a"},
+        {"a123", 0, "a123"},
+        {"12a3", 12, "a3"},
+        {"123, 456", 123, ", 456"},
+    };
 
-            CAPTURE(json, json);
+    for(auto it = parse.begin(); it!=parse.end(); ++it) {
+        const char* json = std::get<0>(*it);
+        long expected_int = std::get<1>(*it);
+        const char* json_after_exec = std::get<2>(*it);
 
-            MockStringStream stream = MockStringStream(json);
-            parser.parse(&stream);
+        CAPTURE(json, json);
 
-            long num = parser.parseInt();
-            REQUIRE(num == expected_int);
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
-        }
-    }
+        MockStringStream stream = MockStringStream(json);
+        parser.parse(&stream);
 
-    GIVEN("Invalid Ints") {
-        std::vector<std::tuple<const char*, long, const char*>> parse {
-            {"", 0, ""}, // No digits
-        };
-
-        for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            const char* json = std::get<0>(*it);
-            long expected_int = std::get<1>(*it);
-            const char* json_after_exec = std::get<2>(*it);
-
-            CAPTURE(json);
-
-            MockStringStream stream = MockStringStream(json);
-            parser.parse(&stream);
-
-            long num = parser.parseInt();
-            REQUIRE(num == expected_int);
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
-        }
+        long num = parser.parseInt();
+        REQUIRE(num == expected_int);
+        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
     }
 }
 
 SCENARIO("JsonParser::parseNum") {
     JsonParser parser;
 
-    GIVEN("Valid Numbers") {
-        std::vector<std::tuple<const char*, double, const char*>> parse {
-            // Ints
-            {"1", 1, ""},
-            {"0", 0, ""},
-            {"-1", -1, ""},
-            {"1-", 1, "-"},
-            {"-123", -123, ""},
+    std::vector<std::tuple<const char*, double, const char*>> parse {
+        // Ints
+        {"1", 1, ""},
+        {"0", 0, ""},
+        {"-1", -1, ""},
+        {"1-", 1, "-"},
+        {"-123", -123, ""},
 
-            // Decimals
-            {"1.0", 1, ""},
-            {"1.1", 1.1, ""},
-            {"1.1234567", 1.1234567, ""},
-            {"\r\n\t -1.2", -1.2, ""},
+        // Decimals
+        {"1.0", 1, ""},
+        {"1.1", 1.1, ""},
+        {"1.1234567", 1.1234567, ""},
 
-            // Scientific notation
-            {"1e2", 100, ""},
-            {"1e+2", 100, ""},
-            {"1e12", 1000000000000, ""},
-            {"1e+12", 1000000000000, ""},
-            {"1e-2", 0.01, ""},
+        // Scientific notation
+        {"1e2", 100, ""},
+        {"1e+2", 100, ""},
+        {"1e12", 1000000000000, ""},
+        {"1e+12", 1000000000000, ""},
+        {"1e-2", 0.01, ""},
 
-            // Decimal + scientific notation
-            {"1.23456e1", 12.3456, ""},
-            {"1.23456e+1", 12.3456, ""},
-            {"1.23456e-1", 0.123456, ""},
+        // Decimal + scientific notation
+        {"1.23456e1", 12.3456, ""},
+        {"1.23456e+1", 12.3456, ""},
+        {"1.23456e-1", 0.123456, ""},
 
-            // Ignore leading zeros
-            {"0000123", 123, ""},
-            {"-0000123", -123, ""},
-            {"1e02", 100, ""},
-            {"1e012", 1000000000000, ""},
-            {"1e+02", 100, ""},
-            {"1e-02", 0.01, ""},
+        // Ignore leading zeros
+        {"0000123", 123, ""},
+        {"-0000123", -123, ""},
+        {"1e02", 100, ""},
+        {"1e012", 1000000000000, ""},
+        {"1e+02", 100, ""},
+        {"1e-02", 0.01, ""},
 
-            {"18446744073709551615", 18446744073709551615.0, ""}, // ULONG_MAX
-            {"18446744073709551616", 18446744073709551616.0, ""}, // 1844674407370955161*10+6 = 0
-            {"98446744073709551615", 98446744073709551615.0, ""},
-        };
+        {"18446744073709551615", 18446744073709551615.0, ""}, // ULONG_MAX
+        {"18446744073709551616", 18446744073709551616.0, ""}, // 1844674407370955161*10+6 = 0
+        {"98446744073709551615", 98446744073709551615.0, ""},
 
-        for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            const char* json = std::get<0>(*it);
-            double expected_decimal = std::get<1>(*it);
-            const char* json_after_exec = std::get<2>(*it);
-            
-            CAPTURE(json);
-            INFO("expected: " << expected_decimal);
+        // Skip leading whitespace
+        {"\r\n\t -1\r\n\t ", -1, "\r\n\t "},
+        {"\r\n\t -1.2", -1.2, ""},
 
-            MockStringStream stream = MockStringStream(json);
-            parser.parse(&stream);
+        // Stop parsing at invalid chars
+        {"123 3    a", 123, " 3    a"},
+        {"a123", 0, "a123"},
+        {"12a3", 12, "a3"},
+        {"123, 456", 123, ", 456"},
+        {"1 .2", 1.0, " .2"},
+        {"1. 2", 0.0, " 2"},
+    };
 
-            double decimal = parser.parseNum();
+    for(auto it = parse.begin(); it!=parse.end(); ++it) {
+        const char* json = std::get<0>(*it);
+        double expected_decimal = std::get<1>(*it);
+        const char* json_after_exec = std::get<2>(*it);
+        
+        CAPTURE(json);
+        INFO("expected: " << expected_decimal);
 
-            std::ostringstream sstream;
-            sstream << decimal;
-            std::string decimal_str = sstream.str();
+        MockStringStream stream = MockStringStream(json);
+        parser.parse(&stream);
 
-            INFO("result: " << decimal_str);
-            REQUIRE(std::fabs(expected_decimal-decimal) <= 0.000000000001);
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
-        }
-    }
+        double decimal = parser.parseNum();
 
-    GIVEN("Invalid numbers") {
-        std::vector<std::tuple<const char*, double, const char*>> parse {
-            // Ints
-            {"123 3", 123, " 3"},
-            {"123a3", 123, "a3"},
+        std::ostringstream sstream;
+        sstream << decimal;
+        std::string decimal_str = sstream.str();
 
-            // Decimals
-            {"\r\n\t 1 .2", 1.0, " .2"},
-            {"\r\n\t 1. 2", 0.0, " 2"},
-        };
-
-        for(auto it = parse.begin(); it!=parse.end(); ++it) {
-            const char* json = std::get<0>(*it);
-            double expected_decimal = std::get<1>(*it);
-            const char* json_after_exec = std::get<2>(*it);
-            
-            CAPTURE(json);
-            INFO("expected: " << expected_decimal);
-
-            MockStringStream stream = MockStringStream(json);
-            parser.parse(&stream);
-
-            double decimal = parser.parseNum();
-
-            INFO("result: " << decimal);
-
-            REQUIRE(std::fabs(expected_decimal-decimal) <= 0.000000000001);
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
-        }
+        INFO("result: " << decimal_str);
+        REQUIRE(std::fabs(expected_decimal-decimal) <= 0.000000000001);
+        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
     }
 }
 
