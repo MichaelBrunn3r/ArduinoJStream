@@ -49,4 +49,11 @@ namespace JStream {
      * @param defaultVal The value that is returned if not a single digit could be parsed
     */
     long stol(const char* str, long defaultVal=0);
+
+    /** @brief Parses a string to a double 
+     * Skips leading whitespace
+     * 
+     * @param defaultVal The value that is returned if not a single digit could be parsed
+    */
+    double stod(const char* str, double defaultVal=0.0);
 }
