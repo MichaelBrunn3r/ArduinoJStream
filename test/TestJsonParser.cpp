@@ -850,40 +850,45 @@ SCENARIO("Parse Num Array") {
     JsonParser parser;
 
     GIVEN("valid arrays") {
-        std::vector<std::tuple<const char*, std::vector<double>>> parse {
+        std::vector<std::tuple<const char*, bool, std::vector<double>, const char*>> parse {
             // Int arrays
-            {"[1,-2,3]", {1,-2,3}},
-            {"[-1,2,-3]", {-1,2,-3}},
-            {"[9268176913,-1409571945,128568915]", {9268176913,-1409571945,128568915}},
+            {"[1,-2,3]", false, {1,-2,3}, ""},
+            {"[-1,2,-3]", false, {-1,2,-3}, ""},
+            {"[9268176913,-1409571945,128568915]", false, {9268176913,-1409571945,128568915}, ""},
 
             // Decimal arrays
-            {"[-1.0,2.12314,4.35]", {-1.0,2.12314,4.35}},
-            {"-1.0,2.12314,4.35]", {-1.0,2.12314,4.35}},
+            {"[-1.0,2.12314,4.35]", false, {-1.0,2.12314,4.35}, ""},
+            {"-1.0,2.12314,4.35]", true, {-1.0,2.12314,4.35}, ""},
 
             // Scientific notation arrays
-            {"1.2345e4, -23E-2]", {12345, -0.23}},
+            {"1.2345e4, -23E-2]", true, {12345, -0.23}, ""},
 
             // Whitespaces
-            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", {1}},
-            {"[\n\r\t 1  \n\r\t ,\n\r\t -2\n\r\t ,\n\r\t 3\n\r\t ]", {1,-2,3}},
-            {"[-\r\n\t 1, 2\r\n\t 3, 4abcdfghijklmnopqrstuvwxyz5]", {-1,23,45}},
+            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", false, {1}, "\n\r\t "},
+            {"[\n\r\t 1  \n\r\t ,\n\r\t -2\n\r\t ,\n\r\t 3\n\r\t ]", false, {1,-2,3}, ""},
+            {"[-\r\n\t 1, 2\r\n\t 3, 4abcdfghijklmnopqrstuvwxyz5]", false, {-1,23,45}, ""},
 
             // Parse unordered array: an array where each number is a string
-            {"[\"2\", \"-1\", \"3\"]", {2,-1,3}},
-            {"[\"-1.0\",\"2.12314\",\"4.35\"]", {-1.0,2.12314,4.35}},
+            {"[\"2\", \"-1\", \"3\"]", false, {2,-1,3}, ""},
+            {"[\"-1.0\",\"2.12314\",\"4.35\"]", false, {-1.0,2.12314,4.35}, ""},
 
             // Minus has to be in front of number
-            {"[1-,2,3]", {1,2,3}},
-            {"[1\r\n\t -,2,3]", {1,2,3}},
+            {"[1-,2,3]", false, {1,2,3}, ""},
+            {"[1\r\n\t -,2,3]", false, {1,2,3}, ""},
 
             // Don't save empty numbers
-            {"[1,,,2]", {1,2}},
-            {",,,1,2]", {1,2}},
+            {"[1,,,2]", false, {1,2}, ""},
+            {",,,1,2]", true, {1,2}, ""},
+
+            // Only read the array from stream
+            {"[1,2,3], suffix", false, {1,2,3}, ", suffix"}
         };
 
         for(auto it=parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            std::vector<double> expected_vec = std::get<1>(*it);
+            bool inArray = std::get<1>(*it);
+            std::vector<double> expected_vec = std::get<2>(*it);
+            const char* json_after_exec = std::get<3>(*it);
 
             CAPTURE(json);
 
@@ -891,27 +896,38 @@ SCENARIO("Parse Num Array") {
             parser.parse(&stream);
             
             std::vector<double> vec;
-            REQUIRE(parser.parseNumArray(vec));
+            REQUIRE(parser.parseNumArray(vec, inArray));
             REQUIRE(vec.size() == expected_vec.size());
 
             for(int i=0; i<vec.size(); i++) {
                 INFO("expected '" << expected_vec.at(i) << "' but got '" << vec.at(i) << "'");
                 REQUIRE(std::fabs(vec.at(i)-expected_vec.at(i)) <= 0.000000000001);
             }
+
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 
     GIVEN("invalid arrays") {
-        std::vector<std::tuple<const char*, std::vector<double>>> parse {
-            {"[1,-2,3", {1, -2}},
-            {"[1", {}},
-            {"[-", {}},
-            {"[", {}},
+        std::vector<std::tuple<const char*, bool, std::vector<double>, const char*>> parse {
+            {"[1,-2,3", false, {1, -2}, ""},
+            {"[1", false, {}, ""},
+            {"[-", false, {}, ""},
+            {"[", false, {}, ""},
+
+            // Incorrect parameter 'inArray'
+            {"1,2,3]", false, {}, "1,2,3]"},
+
+            // Only read the array from stream
+            {"\"akey\": 123", false, {}, "\"akey\": 123"},
+            {"1,2,3], suffix", false, {}, "1,2,3], suffix"},
         };
 
         for(auto it=parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            std::vector<double> expected_vec = std::get<1>(*it);
+            bool inArray = std::get<1>(*it);
+            std::vector<double> expected_vec = std::get<2>(*it);
+            const char* json_after_exec = std::get<3>(*it);
 
             CAPTURE(json);
 
@@ -919,12 +935,14 @@ SCENARIO("Parse Num Array") {
             parser.parse(&stream);
             
             std::vector<double> vec;
-            REQUIRE_FALSE(parser.parseNumArray(vec));
+            REQUIRE_FALSE(parser.parseNumArray(vec, inArray));
             REQUIRE(vec.size() == expected_vec.size());
 
             for(int i=0; i<vec.size(); i++) {
                 REQUIRE(vec.at(i) == expected_vec.at(i));
             }
+
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
 }

@@ -111,7 +111,7 @@ namespace JStream {
             template <typename T>
             bool parseIntArray(std::vector<T>& vec, bool inArray=false);
 
-            bool parseNumArray(std::vector<double>& vec);
+            bool parseNumArray(std::vector<double>& vec, bool inArray=false);
             
         private:
             Stream* stream;

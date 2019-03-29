@@ -392,7 +392,14 @@ namespace JStream {
     template bool JsonParser::parseIntArray<char>(std::vector<char>& vec, bool inArray);
     template bool JsonParser::parseIntArray<long>(std::vector<long>& vec, bool inArray);
 
-    bool JsonParser::parseNumArray(std::vector<double>& vec) {
+    bool JsonParser::parseNumArray(std::vector<double>& vec, bool inArray) {
+        if(!inArray) {
+            char c = skipWhitespace();
+
+            if(c != '[') return false;
+            stream->read();
+        }
+
         Internals::NumAccumulator acc;
         char c;
         do {
