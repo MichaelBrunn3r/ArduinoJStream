@@ -78,6 +78,14 @@ namespace JStream {
              */
             bool find(const char* path);
             /**
+             * @brief Enters the immediatley following json collection
+             * 
+             * Skips whitespace, fails if the immediate following json element isn't a collection
+             * 
+             * @return true if the stream successfully entered the collection, false otherwise
+             */
+            bool enterCollection();
+            /**
              * @brief Exits the specified number of parent objects/arrays
              * 
              * - levels=0: returns immediately

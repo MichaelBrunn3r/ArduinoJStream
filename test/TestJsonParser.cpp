@@ -291,6 +291,51 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
     }
 }
 
+SCENARIO("JsonParser::enterCollection", "[enterCollection]") {
+    JsonParser parser;
+
+    GIVEN("Successfull enters") {
+        std::vector<std::tuple<const char*, const char*>> parse = {
+            {"[", ""},
+            {"\r\n\t [", ""},
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            const char* json_after_exec = std::get<1>(*it);
+
+            CAPTURE(json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE(parser.enterCollection());
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+    
+    GIVEN("Unsuccessfull enters") {
+        std::vector<std::tuple<const char*, const char*>> parse = {
+            {"", ""},
+            {"\r\n\t ", ""},
+            {"\"akey\": []", "\"akey\": []"},
+            {": []", ": []"},
+            {"123 [", "123 ["},
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = std::get<0>(*it);
+            const char* json_after_exec = std::get<1>(*it);
+
+            CAPTURE(json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE_FALSE(parser.enterCollection());
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+}
+
 SCENARIO("JsonParser::exitCollection" , "[exitCollection]") {
     JsonParser parser;
 
