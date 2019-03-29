@@ -11,10 +11,13 @@ TEST_SRC_EXCLUDE := $(wildcard $(TEST_SRC)/Test*) $(TEST_SRC)/main.cpp
 TEST_SRC_FILES := $(filter-out $(TEST_SRC_EXCLUDE), $(wildcard $(TEST_SRC)/*.cpp) $(wildcard $(TEST_SRC)/**/*.cpp) $(wildcard $(LIB_SRC)/**/*.cpp))
 TEST_OBJ_FILES := $(patsubst %.cpp, $(BIN)/%.o, $(TEST_SRC_FILES))
 
-test: testJsonParser
+test: testJsonParser testJsonUtils
 
 testJsonParser: $(TEST_SRC)/catch.hpp Makefile $(BIN)/TestJsonParser
 	$(BIN)/TestJsonParser
+
+testJsonUtils: $(TEST_SRC)/catch.hpp Makefile $(BIN)/TestJsonUtils
+	$(BIN)/TestJsonUtils
 
 clean:
 	- rm -r $(BIN) &>/dev/null
@@ -25,4 +28,7 @@ $(BIN)/%.o : %.cpp
 	g++ -c -o $@ $< -I$(SRC) -I$(TEST_SRC)/MockArduino -ggdb3
 
 $(BIN)/TestJsonParser : $(TEST_SRC)/TestJsonParser.cpp $(SRC_OBJ_FILES) $(TEST_OBJ_FILES)
+	g++ -o $@ $^ -I$(SRC) -I$(TEST_SRC)/MockArduino -I$(LIB_SRC)/test -ggdb3
+
+$(BIN)/TestJsonUtils : $(TEST_SRC)/TestJsonUtils.cpp $(SRC_OBJ_FILES) $(TEST_OBJ_FILES)
 	g++ -o $@ $^ -I$(SRC) -I$(TEST_SRC)/MockArduino -I$(LIB_SRC)/test -ggdb3

@@ -42,4 +42,11 @@ namespace JStream {
 
     /** @brief Tries to escapes a character. Returns 0, if the char cannot be escaped. */
     char escape(const char c);
+
+    /** @brief Parses a string to a long 
+     * Skips leading whitespace, stops parsing at the first non-numeric char (except the sign '-')
+     * 
+     * @param defaultVal The value that is returned if not a single digit could be parsed
+    */
+    long stol(const char* str, long defaultVal=0);
 }
