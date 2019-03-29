@@ -675,6 +675,10 @@ SCENARIO("JsonParser::parseBool") {
             {"true", true, ""},
             {"truefalse", true, "false"},
             {"falsetrue", false, "true"},
+
+            // Skip leading whitespace
+            {"\r\n\t false\r\n\t ", false, "\r\n\t "},
+            {"\r\n\t true\r\n\t ", true, "\r\n\t "},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
@@ -703,6 +707,9 @@ SCENARIO("JsonParser::parseBool") {
             {"t", ""},
             {"fals", ""},
             {"tru", ""},
+
+            {"falze", "ze"},
+            {"tsue", "sue"},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {

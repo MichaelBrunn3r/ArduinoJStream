@@ -318,10 +318,10 @@ namespace JStream {
     bool JsonParser::parseBool(bool defaultVal) {
         static const char* str_true = "true";
         static const char* str_false = "false";
-        
+
         bool result;
         char* compareTo;
-        char c = stream->peek();
+        char c = skipWhitespace();
         if(c == 't') {
             result = true;
             compareTo = (char*)str_true + 1;

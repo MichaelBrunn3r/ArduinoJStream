@@ -115,21 +115,25 @@ namespace JStream {
              * @param defaultVal Default value, if not a single digit could be parsed
              */
             double parseNum(double defaultVal=0.0);
+            /**
+             * @brief Parses the next json boolean
+             * 
+             * Skips leading Whitespaces, stops parsing at the first mismatched char (e.g. "falze": stops at 'z')
+             * 
+             * @param defaultVal Default value, if no valid boolean could be parsed
+             */
             bool parseBool(bool defaultVal=false);
-
             /**
              * @brief Parses an array of integers
              * @param inArray Indicates the opening '[' was alread read
              */
             template <typename T>
             bool parseIntArray(std::vector<T>& vec, bool inArray=false);
-
             /**
              * @brief Parses an array of json numbers
              * @param inArray Indicates the opening '[' was alread read
              */
             bool parseNumArray(std::vector<double>& vec, bool inArray=false);
-
             /**
              * @brief Reads the stream until the first non-whitespace char
              * 
