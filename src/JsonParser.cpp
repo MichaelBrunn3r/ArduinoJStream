@@ -20,20 +20,16 @@ namespace JStream {
         return next(n);
     }
 
-    bool JsonParser::nextKey(String* buf) {
-        skipWhitespace();
+    String JsonParser::nextKey() {
+        String buf = "";
 
+        skipWhitespace();
         do {
             if(stream->peek() != '"') continue; // not start of a string -> cannot be a key -> try matching next key
             stream->read();
 
-            // Read and save key
-            if(buf == NULL) {
-                if(!skipString(true)) continue;
-            } else {
-                *buf = "";
-                if(!readString(*buf, true)) continue;
-            }
+            buf = "";
+            if(!readString(buf, true)) continue;
 
             char c = skipWhitespace();
 
@@ -41,10 +37,10 @@ namespace JStream {
             stream->read();
 
             skipWhitespace();
-            return true;
+            return buf;
         } while(next());
         
-        return false;
+        return "";
     }
 
     bool JsonParser::findKey(const char* thekey) {
