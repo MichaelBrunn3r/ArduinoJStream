@@ -450,7 +450,11 @@ SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipSt
             // Escaped chars
             {"a\\\"string\", suffix", true, "a\"string", ", suffix"},
             {"a\\\\string\", suffix", true, "a\\string", ", suffix"},
-            {"a\\nstring\", suffix", true, "a\nstring", ", suffix"}
+            {"a\\nstring\", suffix", true, "a\nstring", ", suffix"},
+
+            // Skip leading whitespace
+            {"\r\n\t \"astring\"\r\n\t ", false, "astring", "\r\n\t "},
+            {"\r\n\t astring\"\r\n\t ", true, "\r\n\t astring", "\r\n\t "},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {

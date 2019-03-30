@@ -210,7 +210,10 @@ namespace JStream {
     }
 
     bool JsonParser::skipString(bool inStr) {
-        if(!inStr) if(stream->read() != '"') return false; // Read opening '"'
+        if(!inStr) {
+            skipWhitespace();
+            if(stream->read() != '"') return false; // Read opening '"'
+        }
 
         char c = stream->read();
         do {
@@ -224,7 +227,10 @@ namespace JStream {
     }
 
     bool JsonParser::readString(String& buf, bool inStr) {
-        if(!inStr) if(stream->read() != '"') return false; // Read opening '"'
+        if(!inStr) {
+            skipWhitespace();
+            if(stream->read() != '"') return false; // Read opening '"'
+        }
 
         char c = stream->read();
         while(c > 0) {
