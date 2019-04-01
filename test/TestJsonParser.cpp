@@ -1155,19 +1155,23 @@ SCENARIO("JsonParser::next", "[private, next]") {
 SCENARIO("JsonParser::skipWhitespace", "[private, skipWhitespace]") {
     JsonParser parser;
 
-    std::vector<std::tuple<const char*, const int, const char*>> parse = {
+    std::vector<std::tuple<const char*, const int, std::string>> parse = {
             {"", 0, ""},
             {"\t\n\r ", 0, ""},
             {"\"\t\n\r \"", '\"', "\"\t\n\r \""},
             {"  ,", ',' , ","},
             {"abc", 'a' , "abc"},
             {"\t\n\r abc", 'a' , "abc"},
+
+            // UTF-8
+            {"\r\n\t äöüÄÖÜ", ((std::string)"ä")[0], std::string(((std::string)"äöüÄÖÜ").c_str()+1)},
+            {"\r\n\t 😀😃😄", ((std::string)"😀")[0], std::string(((std::string)"😀😃😄").c_str()+1)},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
             const int expectedFirstNonWhitespace = std::get<1>(*it);
-            const char* json_after_exec = std::get<2>(*it);
+            const char* json_after_exec = std::get<2>(*it).c_str();
 
             CAPTURE(json);
 
