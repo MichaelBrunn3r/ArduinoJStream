@@ -145,9 +145,9 @@ namespace JStream {
             /**
              * @brief Reads the stream until the first non-whitespace char
              * 
-             * @return int The first non-whitespace in the stream, or -1 if the stream ended
+             * @return char The first non-whitespace character in the stream, or -1 if the stream ended
              */
-            int skipWhitespace();
+            char skipWhitespace();
         private:
             Stream* stream;
 

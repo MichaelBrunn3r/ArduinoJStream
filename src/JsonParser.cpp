@@ -494,7 +494,7 @@ namespace JStream {
         return false;
     }
 
-    int JsonParser::skipWhitespace() {
+    char JsonParser::skipWhitespace() {
         char c;
         do {
             c = stream->peek();
