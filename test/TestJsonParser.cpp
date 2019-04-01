@@ -312,20 +312,23 @@ SCENARIO("JsonParser::enterCollection", "[enterCollection]") {
     JsonParser parser;
 
     GIVEN("Successfull enters") {
-        std::vector<std::tuple<const char*, const char*>> parse = {
-            {"[", ""},
-            {"\r\n\t [", ""},
+        std::vector<std::tuple<const char*, char, const char*>> parse = {
+            {"[", '[', ""},
+            {"{", '{', ""},
+            {"\r\n\t [", '[', ""},
+            {"\r\n\t {", '{', ""},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            const char* json_after_exec = std::get<1>(*it);
+            char expectedResult = std::get<1>(*it);
+            const char* json_after_exec = std::get<2>(*it);
 
             CAPTURE(json);
 
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            REQUIRE(parser.enterCollection());
+            REQUIRE(parser.enterCollection() == expectedResult);
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }

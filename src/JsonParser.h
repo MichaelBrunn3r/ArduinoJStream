@@ -38,7 +38,7 @@ namespace JStream {
              * - Skips over invalid key-value pairs (e.g. ',"invalid" 1, "akey": 2')
              * - Skips over non key-value pairs (for example in arrays)
              * 
-             * @return String String containing the key
+             * @return String The key
              */
             String nextKey();
             /**
@@ -80,11 +80,11 @@ namespace JStream {
             /**
              * @brief Enters the immediatley following json collection
              * 
-             * Skips whitespace, fails if the immediate following json element isn't a collection
+             * Skips whitespace, fails if the immediate following json element isn't a collection or eof
              * 
-             * @return true if the stream successfully entered the collection, false otherwise
+             * @return char "{" if the stream entered an object, "[" if it entered an array, 0 otherwise
              */
-            bool enterCollection();
+            char enterCollection();
             /**
              * @brief Exits the specified number of parent objects/arrays
              * 

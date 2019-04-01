@@ -169,11 +169,11 @@ namespace JStream {
         return true;
     }
 
-    bool JsonParser::enterCollection() {
+    char JsonParser::enterCollection() {
         char c = skipWhitespace();
-        if(c != '[' && c != '{') return false;
+        if(c != '[' && c != '{') return 0;
         stream->read();
-        return true;
+        return c;
     }
     
     bool JsonParser::exitCollection(size_t levels) {
