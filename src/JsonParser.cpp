@@ -12,8 +12,8 @@ namespace JStream {
     }
 
     bool JsonParser::atEnd() {
-        char c = skipWhitespace();
-        return c>0 && c != '}' && c != ']';
+        int c = skipWhitespace();
+        return c!=0 && c!=-1 && c != '}' && c != ']';
     }
 
     bool JsonParser::nextVal(size_t n) {
@@ -54,9 +54,9 @@ namespace JStream {
             // Match key and thekey by comparing each char
             const char* thekey_it = thekey; // iterator over thekey
             while(*thekey_it) {
-                char c = stream->read();
+                int c = stream->read();
 
-                if(c <= 0) return false; // Stream ended
+                if(c == 0) return false; // Stream ended
 
                 if(c == '\\') { // Escape char
                     c = JStream::escape(stream->read());
@@ -84,7 +84,7 @@ namespace JStream {
                 continue; // try matching next key
             } else stream->read(); // Read closing '"'
 
-            char c = skipWhitespace(); // Whitespace between key and ':'
+            int c = skipWhitespace(); // Whitespace between key and ':'
 
             if(c != ':') continue; // No ':' after matched string -> not a valid json key -> try matching next key
             else stream->read();
@@ -101,7 +101,7 @@ namespace JStream {
 
         for(auto it=path.begin(); it!=path.end(); ++it) {
             if(it!=path.begin()) {
-                char c = stream->peek();
+                int c = stream->peek();
                 if(c != '{' && c != '[') return false;
                 stream->read();
             }
@@ -119,7 +119,7 @@ namespace JStream {
         const char* start = path;
         while(*path) { 
             if(path != start) {
-                char c = stream->peek();
+                int c = stream->peek();
                 if(c != '{' && c != '[') return false;
                 stream->read();
             }
@@ -179,7 +179,7 @@ namespace JStream {
     bool JsonParser::exitCollection(size_t levels) {
         if(levels == 0) return true;
 
-        char c;
+        int c;
         do {
             c = stream->read();
             switch(c) {
@@ -194,17 +194,17 @@ namespace JStream {
                     skipString(true);
                     break;
             }
-        } while(c>0);
+        } while(c!=-1 && c!=0);
 
         return false;
     }
 
     bool JsonParser::skipCollection() {
-        char c;
+        int c;
         do {
             c = stream->read();
             if(c == '[' || c == '{') return exitCollection();
-        } while(c>0);
+        } while(c!=-1 && c!=0);
 
         return false;
     }
@@ -215,13 +215,13 @@ namespace JStream {
             if(stream->read() != '"') return false; // Read opening '"'
         }
 
-        char c = stream->read();
+        int c = stream->read();
         do {
             if(c == '\\') stream->read();
             else if(c == '"') return true;
 
             c = stream->read();
-        } while(c > 0);
+        } while(c != 0 && c != -1);
 
         return false; // Stream ended without closing the string
     }
@@ -232,8 +232,8 @@ namespace JStream {
             if(stream->read() != '"') return false; // Read opening '"'
         }
 
-        char c = stream->read();
-        while(c > 0) {
+        int c = stream->read();
+        while(c != 0 && c != -1) {
             if(c == '\\') {
                 c = JStream::escape(stream->read());
                 if(c == 0) break;
@@ -460,8 +460,8 @@ namespace JStream {
 
         size_t nesting = 0;
 
-        char c;
-        while((c = stream->read()) > 0) {
+        int c = stream->read();
+        while(c!=-1 && c!=0) {
             switch(c) {
                 case '{': case '[':
                     // Start of a nested object
@@ -486,6 +486,8 @@ namespace JStream {
                     
                     break;
             }
+
+            c = stream->read();
         }
 
         // Stream ended, no next key/value
