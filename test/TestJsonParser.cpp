@@ -550,6 +550,52 @@ SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipSt
     }
 }
 
+SCENARIO("JsonParser::strcmp", "[strcmp]") {
+    JsonParser parser;
+
+    std::vector<std::tuple<const char*, const char*, bool, int, const char*>> parse = {
+        // compare length
+        {"astring\", suffix", "astring", true, 0, ", suffix"},
+        {"\"astring\", suffix", "astring", false, 0, ", suffix"},
+        {"astringlonger\", suffix", "astring", true, -1, ", suffix"},
+        {"\"astringlonger\", suffix", "astring", false, -1, ", suffix"},
+        {"astring\", suffix", "astringlonger", true, 1, ", suffix"},
+        {"\"astring\", suffix", "astringlonger", false, 1, ", suffix"},
+
+        // compare alphabetic order
+        {"a\", suffix", "c", true, 1, ", suffix"},
+        {"c\", suffix", "a", true, -1, ", suffix"},
+        {"astringb\", suffix", "astringc", true, 1, ", suffix"},
+        {"astringb\", suffix", "astringa", true, -1, ", suffix"},
+
+        // no closing '"'
+        {"astring", "astring", true, 1, ""},
+        {"astringlonger", "astring", true, -1, ""},
+        {"astring", "astringlonger", true, 1, ""},
+        {"astring", "astring", true, 1, ""},
+
+        // unescapeable char
+        {"a\\b\", suffix", "ab", true, 1, ", suffix"},
+        {"a\\b, suffix", "ab", true, 1, ""},
+    };
+
+    for(auto it = parse.begin(); it!=parse.end(); ++it) {
+        const char* json = std::get<0>(*it);
+        const char* str = std::get<1>(*it);
+        bool inStr = std::get<2>(*it);
+        int expectedResult = std::get<3>(*it);
+        const char* json_after_exec = std::get<4>(*it);
+
+        CAPTURE(json, str);
+
+        MockStringStream stream = MockStringStream(json);
+        parser.parse(&stream);
+
+        REQUIRE(parser.strcmp(str, inStr) == expectedResult);
+        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+    }
+}
+
 SCENARIO("JsonParser::find", "[find]") {
     JsonParser parser;
 

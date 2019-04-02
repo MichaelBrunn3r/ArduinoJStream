@@ -99,14 +99,21 @@ namespace JStream {
             bool skipCollection();
             /** 
              * @brief Reads over a string in the stream
-             * @param inStr Indicates if the stream is positioned either inside or at the opening '"' of the string  
+             * @param inStr Indicates whether the stream is positioned inside the string or before the opening '"'
              **/
             bool skipString(bool inStr=false);
             /**
              * @brief Reads a string from the stream into a buffer
-             * @param inStr Indicates if the stream is positioned either inside or at the opening '"' of the string 
+             * @param inStr Indicates whether the stream is positioned inside the string or before the opening '"'
              */
             bool readString(String& buf, bool inStr=false);
+            /**
+             * @brief Compares a string with the immediate next string in the stream
+             * @param cstr C string to be compared
+             * @param inStr Indicates whether the stream is positioned inside the string or before the opening '"'
+             * @return -1: cstr<stream_str, 0: cstr==stream_str, 1: cstr>stream_str or stream_str is invalid
+             */
+            int strcmp(const char* cstr, bool inStr=false);
             /**
              * @brief Parses the next json integer
              * 
