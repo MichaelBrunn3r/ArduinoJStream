@@ -8,27 +8,33 @@ namespace JStream {
         return next(n);
     }
 
-    String JsonParser::nextKey() {
-        String buf = "";
+    bool JsonParser::nextKey(String* buf) {
 
         skipWhitespace();
         do {
             if(stream->peek() != '"') continue; // not start of a string -> cannot be a key -> try matching next key
             stream->read();
 
-            buf = "";
-            if(!readString(buf, true)) continue;
+            if(buf == nullptr) {
+                if(!skipString(true)) continue;
+            } else {
+                *buf = "";
+                if(!readString(*buf, true)) continue;
+            }
 
             char c = skipWhitespace();
 
-            if(c != ':') continue;
+            if(c != ':') {
+                if(buf != nullptr) *buf = "";
+                continue;
+            }
             stream->read();
 
             skipWhitespace();
-            return buf;
+            return true;
         } while(next());
         
-        return "";
+        return false;
     }
 
     bool JsonParser::findKey(const char* thekey) {

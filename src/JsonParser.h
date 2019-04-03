@@ -27,7 +27,7 @@ namespace JStream {
              */
             bool nextVal(size_t n=1);
             /**
-             * @brief Returns the next valid key in the current json object
+             * @brief Returns true if a next valid key in the current json object exists and stores it in a buffer
              * 
              * Stream position:
              * - on success: First char of the value corresponding to the key
@@ -38,9 +38,10 @@ namespace JStream {
              * - Skips over invalid key-value pairs (e.g. ',"invalid" 1, "akey": 2')
              * - Skips over non key-value pairs (for example in arrays)
              * 
-             * @return String The key
+             * @param String* The Buffer in which the key will be stored (equals "" if no key exists)
+             * @return true if a next key exists, false otherwise
              */
-            String nextKey();
+            bool nextKey(String* buf);
             /**
              * @brief Reads the stream until it finds the searched for key in the current object
              * 

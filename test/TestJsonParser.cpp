@@ -144,9 +144,15 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
             // Test capturing the key
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            String key = parser.nextKey();
-            REQUIRE(key != "");
+            String key = "";
+            REQUIRE(parser.nextKey(&key));
             CHECK_THAT(key.c_str(), Catch::Matchers::Equals(expected_key));
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+
+            // Test not capturing the key
+            stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE(parser.nextKey(nullptr));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
@@ -178,13 +184,19 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
 
             CAPTURE(json);
 
+            // Test capturing the key
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-
-            String key = parser.nextKey();
+            String key = "";
+            REQUIRE_FALSE(parser.nextKey(&key));
             CAPTURE(key);
-
             REQUIRE(key == "");
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+
+            // Test not capturing the key
+            stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE_FALSE(parser.nextKey(nullptr));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
