@@ -27,8 +27,8 @@ $(BIN)/%.o : %.cpp
 	- mkdir -p $(@D)
 	g++ -c -o $@ $< -I$(SRC) -I$(TEST_SRC)/MockArduino -ggdb3
 
-$(BIN)/TestJsonParser : $(TEST_SRC)/TestJsonParser.cpp $(SRC_OBJ_FILES) $(TEST_OBJ_FILES)
+$(BIN)/TestJsonParser : $(TEST_SRC)/TestJsonParser.cpp $(SRC_OBJ_FILES) $(TEST_OBJ_FILES) bin/test/tests-main.o
 	g++ -o $@ $^ -I$(SRC) -I$(TEST_SRC)/MockArduino -I$(LIB_SRC)/test -ggdb3
 
-$(BIN)/TestJsonUtils : $(TEST_SRC)/TestJsonUtils.cpp $(SRC_OBJ_FILES) $(TEST_OBJ_FILES)
+$(BIN)/TestJsonUtils : $(TEST_SRC)/TestJsonUtils.cpp $(SRC_OBJ_FILES) $(TEST_OBJ_FILES) bin/test/tests-main.o
 	g++ -o $@ $^ -I$(SRC) -I$(TEST_SRC)/MockArduino -I$(LIB_SRC)/test -ggdb3
