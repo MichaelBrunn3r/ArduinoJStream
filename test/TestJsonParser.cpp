@@ -580,6 +580,9 @@ SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipSt
             {"\"", false, "", ""},
             {"astring", true, "astring", ""},
             {"\"astring", false, "astring", ""},
+
+            // Don't read anything but a string
+            {"\r\n\t }", false, "", "}"},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {

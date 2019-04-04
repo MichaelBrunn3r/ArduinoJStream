@@ -204,8 +204,9 @@ namespace JStream {
 
     bool JsonParser::skipString(bool inStr) {
         if(!inStr) {
-            skipWhitespace();
-            if(stream->read() != '"') return false; // Read opening '"'
+            char c = skipWhitespace();
+            if(c != '"') return false; 
+            stream->read(); // Read opening '"'
         }
 
         int c = stream->read();
