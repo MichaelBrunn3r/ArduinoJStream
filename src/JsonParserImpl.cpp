@@ -1,6 +1,5 @@
 #include "JsonParser.h"
 #include <JsonUtils.h>
-#include <cstring>
 #include <Internals/NumAccumulator.h>
 
 namespace JStream {

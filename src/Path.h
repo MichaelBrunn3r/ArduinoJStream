@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
 #include <vector>
+#include <WString.h>
+#include <Internals/Types.h>
 
 namespace JStream
 {
