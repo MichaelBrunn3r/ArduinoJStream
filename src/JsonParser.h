@@ -19,7 +19,7 @@ namespace JStream {
              * 
              * Stream position:
              * - on success: First char of the n-th value
-             * - on fail: After closing ']' of the current array
+             * - on fail: At closing ']'/'}' of the current array/object
              * 
              * Behaviour:
              * - Assumes the current parent collection is an array
@@ -31,7 +31,7 @@ namespace JStream {
              * 
              * Stream position:
              * - on success: First char of the value corresponding to the key
-             * - on fail: After closing '}' of the current object
+             * - on fail: At closing ']'/'}' of the current array/object
              * 
              * Behaviour:
              * - Assumes the current parent collection is an object
@@ -47,7 +47,7 @@ namespace JStream {
              * 
              * Stream position:
              * - on success: First char of the value corresponding to the key
-             * - on fail: After closing '}' of the current object
+             * - on fail: At closing ']'/'}' of the current array/object
              * 
              * Behaviour:
              * - Treats the current parent collection as an object
@@ -61,7 +61,7 @@ namespace JStream {
              * 
              * Stream position:
              * - on success: First char of the value corresponding to the key
-             * - on fail: After closing '}' of the current object
+             * - on fail: At closing ']'/'}' of the current array/object
              */
             bool find(Path& path);
             /** 
@@ -69,7 +69,7 @@ namespace JStream {
              * 
              * Stream position:
              * - on success: First char of the value corresponding to the key
-             * - on fail: After closing '}' of the current object
+             * - on fail: At closing ']'/'}' of the current array/object
              * 
              * Formatting:
              *  - "[..]": OFFSET segment, n-th element in a json array/object
@@ -164,7 +164,7 @@ namespace JStream {
              * 
              * Stream position:
              * - on success: First char of the n-th value
-             * - on fail: After closing ']' of the current array
+             * - on fail: At closing ']'/'}' of the current array/object
              * 
              * If n=0, method returns immediately.
              */

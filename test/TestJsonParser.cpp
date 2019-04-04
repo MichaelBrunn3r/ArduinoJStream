@@ -83,30 +83,69 @@ SCENARIO("JsonParser::atEnd", "[atEnd]") {
 SCENARIO("JsonParser::nextVal", "[nextVal]") {
     JsonParser parser;
 
-    std::vector<std::pair<const char*, const char*>> parse = {
-        {",1,2]", "1,2]"},
-        {"1,2]", "2]"},
-        {"1, 2]", "2]"},
-        {"1, 2", "2"},
+    GIVEN("another value exists") {
+        std::vector<std::pair<const char*, const char*>> parse = {
+            {",1,2]", "1,2]"},
+            {", 1,2]", "1,2]"},
 
-        {"[1,2,3], 2]", "2]"},
-        {"{\"1\": 1}, 2]", "2]"},
+            // Skip over current value
+            {"1,2]", "2]"},
+            {"12345,2]", "2]"},
+            {"[1,2,3], 2]", "2]"},
+            {"{\"1\": 1}, 2]", "2]"},
+            {"[[[[[]]]]],2]", "2]"},
+            {"{{{{{}}}}},2]", "2]"},
 
-        // UTF-8
-        {",\"äöüÄÖÜ\"]", "\"äöüÄÖÜ\"]"},
-        {",\"😀😃😄😁😆😅🤣😂🙂🙃😉😊😇\"]", "\"😀😃😄😁😆😅🤣😂🙂🙃😉😊😇\"]"},
-    };
+            // Skip whitespace after ','
+            {"1, 2]", "2]"},
+            {"1, 2", "2"},
 
-    for(auto it = parse.begin(); it!=parse.end(); ++it) {
-        const char* json = it->first;
-        const char* json_after_exec = it->second;
+            // UTF-8
+            {",\"äöüÄÖÜ\"]", "\"äöüÄÖÜ\"]"},
+            {",\"😀😃😄😁😆😅🤣😂🙂🙃😉😊😇\"]", "\"😀😃😄😁😆😅🤣😂🙂🙃😉😊😇\"]"},
+        };
 
-        CAPTURE(json);
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = it->first;
+            const char* json_after_exec = it->second;
 
-        MockStringStream stream = MockStringStream(json);
-        parser.parse(&stream);
-        REQUIRE(parser.nextVal());
-        CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+            CAPTURE(json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE(parser.nextVal());
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
+    }
+    
+    GIVEN("no more values exists") {
+        std::vector<std::pair<const char*, const char*>> parse = {
+            // Don't read closing ']'/'}'
+            {"]", "]"},
+            {"}", "}"},
+
+            // Skip current value
+            {"123]", "]"},
+            {"123}", "}"},
+            {"\"astring\"]", "]"},
+            {"\"astring\"}", "}"},
+            {"[[[]]]]", "]"},
+            {"[[[]]]}", "}"},
+            {"{{{}}}]", "]"},
+            {"{{{}}}}", "}"},
+        };
+
+        for(auto it = parse.begin(); it!=parse.end(); ++it) {
+            const char* json = it->first;
+            const char* json_after_exec = it->second;
+
+            CAPTURE(json);
+
+            MockStringStream stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE_FALSE(parser.nextVal());
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+        }
     }
 }
 
@@ -163,11 +202,11 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
             {"", ""},
             {"123", ""},
 
-            // Stops at end of object/array
-            {"123}123", "123"}, // Stops at }
-            {"123]123", "123"}, // Stops at ]
-            {"\n\r\t }, 123", ", 123"}, // Stops at ]
-            {"\n\r\t ], 123", ", 123"}, // Stops at ]
+            // Don't exit current object/array
+            {"123}123", "}123"},
+            {"123]123", "]123"},
+            {"\n\r\t }, 123", "}, 123"},
+            {"\n\r\t ], 123", "], 123"},
 
             // Skips malformed keys
             {",\"akey\" 123", ""},
@@ -269,26 +308,29 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
         std::vector<std::tuple<const char*, const char*, const char*>> parse = {
             {"", "", ""},
             {"", "thekey", ""},
-            {"}, suffix", "thekey", ", suffix"},
-            {"], suffix", "thekey", ", suffix"},
+
+            // Don't exit current object/array
+            {"}, suffix", "thekey", "}, suffix"},
+            {"], suffix", "thekey", "], suffix"},
+
             {"\"", "thekey", ""},
             {"\"\"", "thekey", ""},
             {"thekey", "thekey", ""},
             {",\"thekey\", suffix", "thekey", ""},
-            {",\"akey\":\"notakey\"}", "notakey", ""},
+            {",\"akey\":\"notakey\"}", "notakey", "}"},
             
             // Skip matching key in nested object/array
-            {", \"1\": {\"thekey\": 123}}", "thekey", ""},
-            {", \"1\": [\"thekey\"]}", "thekey", ""},
+            {", \"1\": {\"thekey\": 123}}", "thekey", "}"},
+            {", \"1\": [\"thekey\"]}", "thekey", "}"},
 
             // Don't match prefixes
-            {",\"thekey123\": 1}", "thekey", ""},
+            {",\"thekey123\": 1}", "thekey", "}"},
 
             // Correctly escaped chars
-            {",\"\\akey\":}", "thekey", ""},
-            {",\"\\\"akey\":}", "thekey", ""},
-            {",\"thekey\\\":\": 1}", "thekey\\", ""},
-            {",\"\\\"thekey\\\":\":}", "\\\"thekey", ""},
+            {",\"\\akey\":}", "thekey", "}"},
+            {",\"\\\"akey\":}", "thekey", "}"},
+            {",\"thekey\\\":\": 1}", "thekey\\", "}"},
+            {",\"\\\"thekey\\\":\":}", "\\\"thekey", "}"},
 
             // Incorrectly and unescapeable chars
             {",\"\"thekey\": 1}", "\"thekey", ""},
@@ -296,11 +338,11 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
             // End of Stream
             {", \"thekey\\", "thekey", ""},
             {", \"thekey", "thekey", ""},
-            {", \"thekey\"}", "thekey", ""},
+            {", \"thekey\"}", "thekey", "}"},
 
             // UTF-8
-            {", \"äöüÄÖ\": 1}", "äöüÄÖÜ", ""},
-            {", \"😀😃😄😁😆😅🤣😂🙂🙃😉😊\": 1}", "😀😃😄😁😆😅🤣😂🙂🙃😉😊😇", ""},
+            {", \"äöüÄÖ\": 1}", "äöüÄÖÜ", "}"},
+            {", \"😀😃😄😁😆😅🤣😂🙂🙃😉😊\": 1}", "😀😃😄😁😆😅🤣😂🙂🙃😉😊😇", "}"},
         };
         
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
@@ -671,8 +713,8 @@ SCENARIO("JsonParser::find", "[find]") {
     GIVEN("Non existing path") {
         std::vector<std::tuple<const char*, const char*, const char*>> parse = {
             // Index out of bounds
-            {"0, 1, 2, 3, 4]", "[5]", ""},
-            {"[1,2,3], [3,4,5], [6,7,8]]", "[1][3]", ", [6,7,8]]"},
+            {"0, 1, 2, 3, 4]", "[5]", "]"},
+            {"[1,2,3], [3,4,5], [6,7,8]]", "[1][3]", "], [6,7,8]]"},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
@@ -1176,22 +1218,23 @@ SCENARIO("JsonParser::next", "[private, next]") {
         std::vector<std::tuple<const char*, size_t, const char*>> parse = {
             {"", 1, ""},
             {"123", 1, ""},
-            {"}", 1, ""},
 
-            // Stops at end of object/array
-                {"123}123", 1, "123"}, // Stops at }
-                {"123]123", 1, "123"}, // Stops at ]
-                {"\"akey\": 123}", 1, ""},
+            // Don't exit current object/array
+            {"}", 1, "}"},
+            {"]", 1, "]"},
+            {"123}123", 1, "}123"}, // Stops at }
+            {"123]123", 1, "]123"}, // Stops at ]
+            {"\"akey\": 123}", 1, "}"},
 
             // Skips over nested objects/arrays
-                {"{\"1\": {\"1.1\": 2}} }", 1, ""},
-                {"[1,[2,3]] ]", 1, ""},
+            {"{\"1\": {\"1.1\": 2}} }", 1, "}"},
+            {"[1,[2,3]] ]", 1, "]"},
 
             // no n-th succeding element
-                {"]", 1, ""},
-                {"}", 1, ""},
-                {",1,2]", 3, ""},
-                {", \"1\": 1, \"2\": 2}", 3, ""}
+            {"]", 1, "]"},
+            {"}", 1, "}"},
+            {",1,2]", 3, "]"},
+            {", \"1\": 1, \"2\": 2}", 3, "}"}
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {

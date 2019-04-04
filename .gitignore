@@ -11,3 +11,6 @@ platformio.ini
 
 test/main\.cpp
 src/main\.cpp
+
+ArduinoJStream
+ArduinoJStream.zip

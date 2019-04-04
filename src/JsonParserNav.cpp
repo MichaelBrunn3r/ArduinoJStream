@@ -232,21 +232,20 @@ namespace JStream {
 
         size_t nesting = 0;
 
-        int c = stream->read();
+        int c = stream->peek();
         while(c!=-1 && c!=0) {
             switch(c) {
-                case '{': case '[':
-                    // Start of a nested object
+                case '{': case '[': // Start of a nested object
+                    stream->read();
                     exitCollection();
-
                     break;
-                case '}': case ']':
-                    return false; // End of current object/array, no next key/value
-                case '"':
-                    // Skip String
-                    skipString(true); // Exit String
+                case '}': case ']': // End of current object/array, no next key/value
+                    return false;
+                case '"': // Start of String
+                    skipString();
                     break;
                 case ',':
+                    stream->read();
                     if(nesting > 0) break;
                         
                     // Reached start of next key/value
@@ -257,9 +256,10 @@ namespace JStream {
                     }
                     
                     break;
+                default: stream->read();
             }
 
-            c = stream->read();
+            c = stream->peek();
         }
 
         // Stream ended, no next key/value
