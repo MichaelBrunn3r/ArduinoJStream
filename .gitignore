@@ -1,7 +1,7 @@
 # Ignore all files without extension
 !Makefile
 
-bin
+build
 .pio
 .pioenvs
 .piolibdeps
