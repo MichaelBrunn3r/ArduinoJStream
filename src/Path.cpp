@@ -1,5 +1,5 @@
 #include "Path.h"
-#include <JsonUtils.h>
+#include <Internals/JsonUtils.h>
 #include <cstring>
 
 namespace JStream {
@@ -25,7 +25,7 @@ namespace JStream {
                 // Read offset
                 size_t offset = 0;
                 while(*path_str) {
-                    if(JStream::isDecDigit(*path_str)) {
+                    if(Internals::isDecDigit(*path_str)) {
                         offset = offset*10 + *path_str++ - '0';
                     } else if(*path_str == ']') {
                         path_str++;

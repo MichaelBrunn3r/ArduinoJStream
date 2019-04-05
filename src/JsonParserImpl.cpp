@@ -1,5 +1,5 @@
 #include "JsonParser.h"
-#include <JsonUtils.h>
+#include <Internals/JsonUtils.h>
 #include <Internals/NumAccumulator.h>
 
 namespace JStream {
@@ -25,7 +25,7 @@ namespace JStream {
         int c = stream->read();
         while(c != 0 && c != -1) {
             if(c == '\\') {
-                c = JStream::escape(stream->read());
+                c = Internals::escape(stream->read());
                 if(c == 0) break;
             } else if (c == '"') return true;
 
@@ -47,7 +47,7 @@ namespace JStream {
             c = stream->read();
 
             if(c == '\\') {
-                if(!(c = JStream::escape(stream->read()))) {
+                if(!(c = Internals::escape(stream->read()))) {
                     skipString(true);
                     return 1; // char is unescapeable -> any string is bigger than an incorrect one
                 }

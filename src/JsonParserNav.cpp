@@ -1,5 +1,5 @@
 #include "JsonParser.h"
-#include <JsonUtils.h>
+#include <Internals/JsonUtils.h>
 #include <Internals/NumAccumulator.h>
 
 namespace JStream {
@@ -52,7 +52,7 @@ namespace JStream {
                 if(c == 0) return false; // Stream ended
 
                 if(c == '\\') { // Escape char
-                    c = JStream::escape(stream->read());
+                    c = Internals::escape(stream->read());
                     
                     // Skip current key if char is unescapable
                     if(c==0) {
@@ -123,7 +123,7 @@ namespace JStream {
                 // Read offset
                 size_t offset = 0;
                 while(*path) {
-                    if(JStream::isDecDigit(*path)) {
+                    if(Internals::isDecDigit(*path)) {
                         offset = offset*10 + *path++ - '0';
                     } else if(*path == ']') {
                         path++;
@@ -270,7 +270,7 @@ namespace JStream {
         char c;
         do {
             c = stream->peek();
-            if(isNotWhitespace(c)) break;
+            if(Internals::isNotWhitespace(c)) break;
             stream->read();
         } while(c > 0);
 

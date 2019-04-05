@@ -1,9 +1,7 @@
 #pragma once
 
 #include <vector>
-
 #include <Stream.h>
-
 #include <Path.h>
 
 namespace JStream {

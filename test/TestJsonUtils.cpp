@@ -13,12 +13,14 @@
 
 #define protected public
 #define private   public
-#include <JsonUtils.h>
+#include <Internals/JsonUtils.h>
 #undef protected
 #undef private
 
+using namespace JStream;
+
 SCENARIO("stol") {
-    JStream::JsonParser parser;
+    JsonParser parser;
 
     GIVEN("valid longs") {
         std::vector<std::tuple<const char*, long, long>> parse = {
@@ -41,7 +43,7 @@ SCENARIO("stol") {
 
             CAPTURE(str);
 
-            long result = JStream::stol(str, defaultVal);
+            long result = Internals::stol(str, defaultVal);
 
             REQUIRE(result == expectedVal);
         }
@@ -65,7 +67,7 @@ SCENARIO("stol") {
 
             CAPTURE(str);
 
-            long result = JStream::stol(str, defaultVal);
+            long result = Internals::stol(str, defaultVal);
 
             REQUIRE(result == defaultVal);
         }
@@ -73,7 +75,7 @@ SCENARIO("stol") {
 }
 
 SCENARIO("stod") {
-    JStream::JsonParser parser;
+    JsonParser parser;
 
     GIVEN("valid longs") {
         std::vector<std::tuple<const char*, double, double>> parse = {
@@ -133,7 +135,7 @@ SCENARIO("stod") {
 
             CAPTURE(str);
 
-            double result = JStream::stod(str, defaultVal);
+            double result = Internals::stod(str, defaultVal);
 
             INFO("result: " << result);
             REQUIRE(std::fabs(expectedVal-result) <= 0.000000000001);
