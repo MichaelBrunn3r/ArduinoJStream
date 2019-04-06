@@ -162,11 +162,18 @@ namespace JStream {
         return true;
     }
 
-    char JsonParser::enterCollection() {
+    bool JsonParser::enterArr() {
         char c = skipWhitespace();
-        if(c != '[' && c != '{') return 0;
+        if(c != '[') return false;
         stream->read();
-        return c;
+        return true;
+    }
+
+    bool JsonParser::enterObj() {
+        char c = skipWhitespace();
+        if(c != '{') return false;
+        stream->read();
+        return true;
     }
     
     bool JsonParser::exitCollection(size_t levels) {

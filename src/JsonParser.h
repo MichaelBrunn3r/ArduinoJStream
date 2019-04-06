@@ -78,13 +78,15 @@ namespace JStream {
              */
             bool find(const char* path);
             /**
-             * @brief Enters the immediatley following json collection
-             * 
-             * Skips whitespace, fails if the immediate following json element isn't a collection or eof
-             * 
-             * @return char "{" if the stream entered an object, "[" if it entered an array, 0 otherwise
+             * @brief Enters the immediatley following json array
+             * Skips whitespace, fails if the next json element isn't beginning of an array
              */
-            char enterCollection();
+            bool enterArr();
+            /**
+             * @brief Enters the immediatley following json object
+             * Skips whitespace, fails if the next json element isn't beginning of an object
+             */
+            bool enterObj();
             /**
              * @brief Exits the specified number of parent objects/arrays
              * 

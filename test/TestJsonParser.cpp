@@ -365,32 +365,41 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
     }
 }
 
-SCENARIO("JsonParser::enterCollection", "[enterCollection]") {
+TEST_CASE("JsonParser::enterArr && ::enterObj", "[enterCollection, enterArr, enterObj]") {
     JsonParser parser;
 
-    GIVEN("Successfull enters") {
+    SECTION("Either ::enterArr or ::enterObj successfull") {
         std::vector<std::tuple<const char*, char, const char*>> parse = {
-            {"[", '[', ""},
-            {"{", '{', ""},
+            {"[, suffix", '[', ", suffix"},
+            {"{, suffix", '{', ", suffix"},
             {"\r\n\t [", '[', ""},
             {"\r\n\t {", '{', ""},
         };
 
         for(auto it = parse.begin(); it!=parse.end(); ++it) {
             const char* json = std::get<0>(*it);
-            char expectedResult = std::get<1>(*it);
+            char collectionType = std::get<1>(*it);
             const char* json_after_exec = std::get<2>(*it);
 
             CAPTURE(json);
 
+            // enterArr
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            REQUIRE(parser.enterCollection() == expectedResult);
-            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+            REQUIRE(parser.enterArr() == (collectionType == '['));
+            if(collectionType == '[') CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+            else CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(String(collectionType) + json_after_exec));
+
+            // enterObj
+            stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE(parser.enterObj() == (collectionType == '{'));
+            if(collectionType == '{') CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+            else CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(String(collectionType) + json_after_exec));
         }
     }
     
-    GIVEN("Unsuccessfull enters") {
+    SECTION("Neither is successfull") {
         std::vector<std::tuple<const char*, const char*>> parse = {
             {"", ""},
             {"\r\n\t ", ""},
@@ -405,9 +414,16 @@ SCENARIO("JsonParser::enterCollection", "[enterCollection]") {
 
             CAPTURE(json);
 
+            // enterArr
             MockStringStream stream = MockStringStream(json);
             parser.parse(&stream);
-            REQUIRE_FALSE(parser.enterCollection());
+            REQUIRE_FALSE(parser.enterArr());
+            CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
+
+            // enterObj
+            stream = MockStringStream(json);
+            parser.parse(&stream);
+            REQUIRE_FALSE(parser.enterObj());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
