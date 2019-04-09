@@ -3,6 +3,7 @@
 #include <vector>
 #include <Stream.h>
 #include <Path.h>
+#include <limits>
 
 namespace JStream {
     class JsonParser {
@@ -148,11 +149,19 @@ namespace JStream {
             bool parseBool(bool defaultVal=false);
             /**
              * @brief Parses an array of integers
-             * @param ignoreNeg Indicates if the method should ignore/skip negative integers
+             * If T is an unsigned type, negative integers are ignored
              * @param inArray Indicates the opening '[' was alread read
              */
             template<typename T>
-            bool parseIntArray(std::vector<T>& vec, bool ignoreNeg=false) {
+            bool parseIntArray(std::vector<T>& vec, bool inArray=false) {
+                bool ignoreNeg = !std::numeric_limits<T>::is_signed; // Ignore negatiove integers if type is unsigned
+
+                if(!inArray) {
+                    int c = skipWhitespace();
+                    if(c != '[') return false;
+                    stream->read();
+                }
+
                 T num = 0;
                 T sign = 1;
 

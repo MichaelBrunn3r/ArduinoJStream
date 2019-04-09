@@ -21,10 +21,10 @@
 
 using namespace JStream;
 
-SCENARIO("JsonParser::atEnd", "[atEnd]") {
+TEST_CASE("JsonParser::atEnd", "[atEnd]") {
     JsonParser parser;
 
-    GIVEN("Json not at the end of the current object/array") {
+    SECTION("Json not at the end of the current object/array") {
         std::vector<std::pair<const char*, const char*>> tests {         
             // Skip whitespace in Arrays
             {",1]", ",1]"},
@@ -57,7 +57,7 @@ SCENARIO("JsonParser::atEnd", "[atEnd]") {
         }
     }
     
-    GIVEN("Json at the end of the current object/array") {
+    SECTION("Json at the end of the current object/array") {
         std::vector<std::pair<const char*, const char*>> tests {
             {"", ""},
             {" ", ""},
@@ -81,10 +81,10 @@ SCENARIO("JsonParser::atEnd", "[atEnd]") {
     }
 }
 
-SCENARIO("JsonParser::nextVal", "[nextVal]") {
+TEST_CASE("JsonParser::nextVal", "[nextVal]") {
     JsonParser parser;
 
-    GIVEN("another value exists") {
+    SECTION("another value exists") {
         std::vector<std::pair<const char*, const char*>> tests {
             {",1,2]", "1,2]"},
             {", 1,2]", "1,2]"},
@@ -119,7 +119,7 @@ SCENARIO("JsonParser::nextVal", "[nextVal]") {
         }
     }
     
-    GIVEN("no more values exists") {
+    SECTION("no more values exists") {
         std::vector<std::pair<const char*, const char*>> tests {
             // Don't read closing ']'/'}'
             {"]", "]"},
@@ -150,10 +150,10 @@ SCENARIO("JsonParser::nextVal", "[nextVal]") {
     }
 }
 
-SCENARIO("JsonParser::nextKey", "[nextKey]") {
+TEST_CASE("JsonParser::nextKey", "[nextKey]") {
     JsonParser parser;
 
-    GIVEN("Next Key exists") {
+    SECTION("Next Key exists") {
         // Json string | result of 'nextKey' | resulting Json string
         std::vector<std::tuple<const char*, const char*, const char*>> tests {
             {"\"akey\": 123}", "akey", "123}"},
@@ -201,7 +201,7 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
         }
     }
 
-    GIVEN("No next Key exists") {
+    SECTION("No next Key exists") {
         // Json string | result of 'nextKey' | resulting Json string
         std::vector<std::tuple<const char*, const char*>> tests {
             {"", ""},
@@ -246,9 +246,9 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
     }
 }
 
-SCENARIO("JsonParser::findKey", "[findKey]") {
+TEST_CASE("JsonParser::findKey", "[findKey]") {
     JsonParser parser;
-    GIVEN("Json with matching key") {
+    SECTION("Json with matching key") {
         // Json | key | resulting Json
         std::vector<std::tuple<const char*, const char*, const char*>> tests {
             // Test Whitespaces
@@ -308,7 +308,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
         }
     }
 
-    GIVEN("Json without matching key") {
+    SECTION("Json without matching key") {
         // Json | key | resulting Json
         std::vector<std::tuple<const char*, const char*, const char*>> tests {
             {"", "", ""},
@@ -430,10 +430,10 @@ TEST_CASE("JsonParser::enterArr && ::enterObj", "[enterCollection, enterArr, ent
     }
 }
 
-SCENARIO("JsonParser::exitCollection" , "[exitCollection]") {
+TEST_CASE("JsonParser::exitCollection" , "[exitCollection]") {
     JsonParser parser;
 
-    GIVEN("Successfull exits") {
+    SECTION("Successfull exits") {
         std::vector<std::tuple<const char*, size_t, const char*>> tests {
             {"123", 0, "123"},
 
@@ -481,7 +481,7 @@ SCENARIO("JsonParser::exitCollection" , "[exitCollection]") {
         }
     }
 
-    GIVEN("Unsuccessfull exits") {
+    SECTION("Unsuccessfull exits") {
         std::vector<std::tuple<const char*, size_t, const char*>> tests {
             // Empty Json
             {"", 1, ""},
@@ -507,10 +507,10 @@ SCENARIO("JsonParser::exitCollection" , "[exitCollection]") {
     }
 }
 
-SCENARIO("JsonParser::skipCollection", "[skipCollection]") {
+TEST_CASE("JsonParser::skipCollection", "[skipCollection]") {
     JsonParser parser;
 
-    GIVEN("Successfull skips") {
+    SECTION("Successfull skips") {
         std::vector<std::tuple<const char*, const char*>> tests = {
             {"[], suffix", ", suffix"},
             {"{}, suffix", ", suffix"},
@@ -544,10 +544,10 @@ SCENARIO("JsonParser::skipCollection", "[skipCollection]") {
     }
 }
 
-SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipString]") {
+TEST_CASE("JsonParser::readString & JsonParser::skipString", "[readString, skipString]") {
     JsonParser parser;
 
-    GIVEN("valid strings") {
+    SECTION("valid strings") {
         std::vector<std::tuple<const char*, bool, const char*, const char*>> tests = {
             {"\"", true, "", ""},
             {"astring\", suffix", true, "astring", ", suffix"},
@@ -594,7 +594,7 @@ SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipSt
         }
     }
 
-    GIVEN("invalid strings") {
+    SECTION("invalid strings") {
         std::vector<std::tuple<const char*, bool, const char*, const char*>> tests = {
             {"", true, "", ""},
             {"\"", false, "", ""},
@@ -630,7 +630,7 @@ SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipSt
     }
 }
 
-SCENARIO("JsonParser::strcmp", "[strcmp]") {
+TEST_CASE("JsonParser::strcmp", "[strcmp]") {
     JsonParser parser;
 
     std::vector<std::tuple<const char*, const char*, bool, int, const char*>> tests = {
@@ -676,10 +676,10 @@ SCENARIO("JsonParser::strcmp", "[strcmp]") {
     }
 }
 
-SCENARIO("JsonParser::find", "[find]") {
+TEST_CASE("JsonParser::find", "[find]") {
     JsonParser parser;
 
-    GIVEN("Existing path") {
+    SECTION("Existing path") {
         std::vector<std::tuple<const char*, const char*, const char*>> tests = {
             {"", "", ""},
             {"\"akey\": 1", "", "\"akey\": 1"},
@@ -737,7 +737,7 @@ SCENARIO("JsonParser::find", "[find]") {
         }
     }
 
-    GIVEN("Non existing path") {
+    SECTION("Non existing path") {
         std::vector<std::tuple<const char*, const char*, const char*>> tests = {
             // Index out of bounds
             {"0, 1, 2, 3, 4]", "[5]", "]"},
@@ -762,7 +762,7 @@ SCENARIO("JsonParser::find", "[find]") {
     
 }
 
-SCENARIO("JsonParser::parseInt") {
+TEST_CASE("JsonParser::parseInt") {
     JsonParser parser;
 
     std::vector<std::tuple<const char*, long, const char*>> tests {
@@ -802,7 +802,7 @@ SCENARIO("JsonParser::parseInt") {
     }
 }
 
-SCENARIO("JsonParser::parseNum") {
+TEST_CASE("JsonParser::parseNum") {
     JsonParser parser;
 
     std::vector<std::tuple<const char*, double, const char*>> tests {
@@ -874,10 +874,10 @@ SCENARIO("JsonParser::parseNum") {
     }
 }
 
-SCENARIO("JsonParser::parseBool") {
+TEST_CASE("JsonParser::parseBool") {
     JsonParser parser;
 
-    GIVEN("valid booleans") {
+    SECTION("valid booleans") {
         std::vector<std::tuple<const char*, bool, const char*>> tests {
             {"false", false, ""},
             {"true", true, ""},
@@ -909,7 +909,7 @@ SCENARIO("JsonParser::parseBool") {
         }
     }
 
-    GIVEN("invalid booleans") {
+    SECTION("invalid booleans") {
         std::vector<std::tuple<const char*, const char*>> tests {
             {"f", ""},
             {"t", ""},
@@ -943,34 +943,35 @@ TEST_CASE("Parse Int Array") {
     JsonParser parser;
 
     SECTION("valid arrays") {
-        std::vector<std::tuple<const char*, std::vector<long>, const char*>> tests {
-            {"[-1,2,-3], suffix", {-1,2,-3}, ", suffix"},
-            {"-1,2,-3], suffix", {-1,2,-3}, ", suffix"},
-            {"[9268176913,-1409571945,128568915], suffix", {9268176913,-1409571945,128568915}, ", suffix"},
+        std::vector<std::tuple<const char*, bool, std::vector<long>, const char*>> tests {
+            {"[-1,2,-3], suffix", false, {-1,2,-3}, ", suffix"},
+            {"-1,2,-3], suffix", true, {-1,2,-3}, ", suffix"},
+            {"[9268176913,-1409571945,128568915], suffix", false, {9268176913,-1409571945,128568915}, ", suffix"},
 
             // Whitespaces
-            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", {1}, "\n\r\t "},
-            {"[\n\r\t 1  \n\r\t ,\n\r\t -2\n\r\t ,\n\r\t 3\n\r\t ]", {1,-2,3}, ""},
-            {"[-\r\n\t 1, 2\r\n\t 3, 4abcdefghijklmnopqrstuvwxyz5]", {-1,23,45}, ""},
+            {"\n\r\t [\n\r\t 1\n\r\t ]\n\r\t ", false, {1}, "\n\r\t "},
+            {"[\n\r\t 1  \n\r\t ,\n\r\t -2\n\r\t ,\n\r\t 3\n\r\t ]", false, {1,-2,3}, ""},
+            {"[-\r\n\t 1, 2\r\n\t 3, 4abcdefghijklmnopqrstuvwxyz5]", false, {-1,23,45}, ""},
 
             // Parse unordered int array: an array where each integer is a string 
-            {"[\"2\", \"1\", \"3\"]", {2,1,3}, ""},
-            {"[\"2\", \"-1\", \"3\"]", {2,-1,3}, ""},
-            {"[\"-2\", \"-1\", \"-3\"]", {-2,-1,-3}, ""},
+            {"[\"2\", \"1\", \"3\"]", false, {2,1,3}, ""},
+            {"[\"2\", \"-1\", \"3\"]", false, {2,-1,3}, ""},
+            {"[\"-2\", \"-1\", \"-3\"]", false, {-2,-1,-3}, ""},
 
             // Minus has to be in front of number
-            {"[1-,2,3]", {1,2,3}, ""},
-            {"[1\r\n\t -,2,3]", {1,2,3}, ""},
+            {"[1-,2,3]", false, {1,2,3}, ""},
+            {"[1\r\n\t -,2,3]", false, {1,2,3}, ""},
 
             // Don't save empty numbers
-            {"[1,,,2], suffix", {1,2}, ", suffix"},
-            {",,,1,2], suffix", {1,2}, ", suffix"},
+            {"[1,,,2], suffix", false, {1,2}, ", suffix"},
+            {",,,1,2], suffix", true, {1,2}, ", suffix"},
         };
 
 		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
-            std::vector<long> expected_vec = std::get<1>(tests.at(testIdx));
-            const char* json_after_exec = std::get<2>(tests.at(testIdx));
+            bool inArray = std::get<1>(tests.at(testIdx));
+            std::vector<long> expected_vec = std::get<2>(tests.at(testIdx));
+            const char* json_after_exec = std::get<3>(tests.at(testIdx));
 
             CAPTURE(testIdx, json);
 
@@ -978,7 +979,7 @@ TEST_CASE("Parse Int Array") {
             parser.parse(&stream);
             
             std::vector<long> vec;
-            REQUIRE(parser.parseIntArray<long>(vec));
+            REQUIRE(parser.parseIntArray<long>(vec, inArray));
             REQUIRE(vec.size() == expected_vec.size());
 
             for(int i=0; i<vec.size(); i++) {
@@ -990,23 +991,24 @@ TEST_CASE("Parse Int Array") {
     }
 
     SECTION("ignore negative integers") {
-        std::vector<std::tuple<const char*, std::vector<long>, const char*>> tests {
-            {"[1,-2,3], suffix", {1,3}, ", suffix"},
-            {"[-1,-2,-3], suffix", {}, ", suffix"},
+        std::vector<std::tuple<const char*, bool, std::vector<long>, const char*>> tests {
+            {"[1,-2,3], suffix", false, {1,3}, ", suffix"},
+            {"[-1,-2,-3], suffix", false, {}, ", suffix"},
         };
 
         for(int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
-            std::vector<long> expected_vec = std::get<1>(tests.at(testIdx));
-            const char* json_after_exec = std::get<2>(tests.at(testIdx));
+            bool inArray = std::get<1>(tests.at(testIdx));
+            std::vector<long> expected_vec = std::get<2>(tests.at(testIdx));
+            const char* json_after_exec = std::get<3>(tests.at(testIdx));
 
             CAPTURE(testIdx, json);
 
             MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             
-            std::vector<long> vec;
-            REQUIRE(parser.parseIntArray<long>(vec, true));
+            std::vector<unsigned long> vec;
+            REQUIRE(parser.parseIntArray<unsigned long>(vec, inArray));
             REQUIRE(vec.size() == expected_vec.size());
 
             for(int i=0; i<vec.size(); i++) {
@@ -1018,17 +1020,19 @@ TEST_CASE("Parse Int Array") {
     }
 
     SECTION("invalid arrays") {
-        std::vector<std::tuple<const char*, std::vector<long>, const char*>> tests {
-            {"[1,-2,3", {1, -2}, ""},
-            {"[1", {}, ""},
-            {"[-", {}, ""},
-            {"[-1", {}, ""},
+        std::vector<std::tuple<const char*, bool, std::vector<long>, const char*>> tests {
+            {"[1,-2,3", false, {1, -2}, ""},
+            {"[1", false, {}, ""},
+            {"[-", false, {}, ""},
+            {"[-1", false, {}, ""},
+            {",suffix", false, {}, ",suffix"},
         };
 
 		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
-            std::vector<long> expected_vec = std::get<1>(tests.at(testIdx));
-            const char* json_after_exec = std::get<2>(tests.at(testIdx));
+            bool inArray = std::get<1>(tests.at(testIdx));
+            std::vector<long> expected_vec = std::get<2>(tests.at(testIdx));
+            const char* json_after_exec = std::get<3>(tests.at(testIdx));
 
             CAPTURE(testIdx, json);
 
@@ -1036,7 +1040,7 @@ TEST_CASE("Parse Int Array") {
             parser.parse(&stream);
             
             std::vector<long> vec;
-            REQUIRE_FALSE(parser.parseIntArray<long>(vec));
+            REQUIRE_FALSE(parser.parseIntArray<long>(vec, inArray));
             REQUIRE(vec.size() == expected_vec.size());
 
             for(int i=0; i<vec.size(); i++) {
@@ -1048,10 +1052,10 @@ TEST_CASE("Parse Int Array") {
     }
 }
 
-SCENARIO("Parse Num Array") {
+TEST_CASE("Parse Num Array") {
     JsonParser parser;
 
-    GIVEN("valid arrays") {
+    SECTION("valid arrays") {
         std::vector<std::tuple<const char*, bool, std::vector<double>, const char*>> tests {
             // Int arrays
             {"[1,-2,3]", false, {1,-2,3}, ""},
@@ -1110,7 +1114,7 @@ SCENARIO("Parse Num Array") {
         }
     }
 
-    GIVEN("invalid arrays") {
+    SECTION("invalid arrays") {
         std::vector<std::tuple<const char*, bool, std::vector<double>, const char*>> tests {
             {"[1,-2,3", false, {1, -2}, ""},
             {"[1", false, {}, ""},
@@ -1149,10 +1153,10 @@ SCENARIO("Parse Num Array") {
     }
 }
 
-SCENARIO("JsonParser::compilePath", "[compilePath]") {
+TEST_CASE("JsonParser::compilePath", "[compilePath]") {
     JsonParser parser;
 
-    GIVEN("Valid paths") {
+    SECTION("Valid paths") {
         std::vector<std::tuple<const char*, std::vector<PathSegment>>> tests {
             {"thekey", {{"thekey"}}},
             {"obj1/thekey", {{"obj1"}, {"thekey"}}},
@@ -1198,7 +1202,7 @@ SCENARIO("JsonParser::compilePath", "[compilePath]") {
         }
     }
 
-    // GIVEN("Invalid paths") {
+    // SECTION("Invalid paths") {
     //     std::vector<std::tuple<const char*>> tests {
     //         {"obj1[1]obj2"}
     //     };
@@ -1218,10 +1222,10 @@ SCENARIO("JsonParser::compilePath", "[compilePath]") {
 // Private methods //
 /////////////////////
 
-SCENARIO("JsonParser::next", "[private, next]") {
+TEST_CASE("JsonParser::next", "[private, next]") {
     JsonParser parser;
 
-    GIVEN("Json with next") {
+    SECTION("Json with next") {
         std::vector<std::tuple<const char*, size_t, const char*>> tests {
             // immediate next
             {",1,2,3,4]", 1, "1,2,3,4]"},
@@ -1266,7 +1270,7 @@ SCENARIO("JsonParser::next", "[private, next]") {
         }
     }
 
-    GIVEN("Json without next") {
+    SECTION("Json without next") {
         std::vector<std::tuple<const char*, size_t, const char*>> tests {
             {"", 1, ""},
             {"123", 1, ""},
@@ -1304,7 +1308,7 @@ SCENARIO("JsonParser::next", "[private, next]") {
     }
 }
 
-SCENARIO("JsonParser::skipWhitespace", "[private, skipWhitespace]") {
+TEST_CASE("JsonParser::skipWhitespace", "[private, skipWhitespace]") {
     JsonParser parser;
 
     std::vector<std::tuple<const char*, const int, std::string>> tests {
