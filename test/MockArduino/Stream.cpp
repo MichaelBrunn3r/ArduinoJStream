@@ -1,8 +1,7 @@
 #include "Stream.h"
 #include <ctime>
 
-#define yield()
-#define millis() std::time(0)*1000
+
 
 int Stream::timedRead() {
     int c;
@@ -84,8 +83,20 @@ size_t Stream::readBytesUntil(char terminator, char *buffer, size_t length) {
 
 String Stream::readString() {
     String ret;
-    while(available()) {
+    while(available() > 0) {
         ret += (char) read();
     }
     return ret;
+}
+
+size_t Stream::readBytes(char* buf, const int length) {
+    size_t count = 0;
+        while(count < length) {
+            int c = timedRead();
+            if(c < 0)
+                break;
+            *buf++ = (char) c;
+            count++;
+        }
+    return count;
 }

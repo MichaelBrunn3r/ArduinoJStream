@@ -2,7 +2,6 @@
 #define MOCK_Arduino_HEADER
 
 #include "WString.h"
-#include <ctime>
 
 #define DEC 10
 #define HEX 16
@@ -10,6 +9,7 @@
 
 typedef uint8_t boolean;
 typedef uint8_t byte;
+typedef uint16_t word;
 
 class HardwareSerial {
     public:
@@ -23,5 +23,7 @@ extern void delay(unsigned long);
 long random(long);
 long random(long, long);
 void randomSeed(unsigned long);
+unsigned long millis(void);
+void yield();
 
 #endif //MOCK_Arduino_HEADER

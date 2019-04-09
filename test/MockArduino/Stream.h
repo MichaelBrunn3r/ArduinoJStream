@@ -12,20 +12,20 @@ class Stream {
         virtual int available() = 0;
         virtual int read() = 0;
         virtual int peek() = 0;
-        virtual size_t readBytes(char* buf, const int length) = 0;
-        virtual size_t readBytes(byte* buf, const int length) = 0;
+        virtual size_t readBytes(char* buf, const int length);
         size_t readBytesUntil(char terminator, char *buffer, size_t length);
         virtual long parseInt(char skipChar = NO_SKIP_CHAR);
         virtual size_t write(uint8_t) = 0;
 
         String readString();
 
-    protected:
         unsigned long _timeout;
         unsigned long _startMillis;
+        int peekNextDigit();
+
+    protected:
         int timedRead();
         int timedPeek();
-        int peekNextDigit();
 };
 
 #endif //MOCK_Stream_HEADER

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <cstdlib>
+#include <ctime>
 
 size_t HardwareSerial::print(const String &str) {std::cout << str;}
 size_t HardwareSerial::print(const char* str) {std::cout << str;}
@@ -36,6 +37,14 @@ void randomSeed(unsigned long seed) {
         srand(seed);
         s_randomSeedCalled = true;
     }
+}
+
+unsigned long millis(void) {
+    return std::time(0)*1000;
+}
+
+void yield() {
+    delay(1);
 }
 
 HardwareSerial Serial;
