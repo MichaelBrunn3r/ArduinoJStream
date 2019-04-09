@@ -21,7 +21,7 @@ namespace JStream {
                 if(!readString(*buf, true)) continue;
             }
 
-            char c = skipWhitespace();
+            int c = skipWhitespace();
 
             if(c != ':') {
                 if(buf != nullptr) *buf = "";
@@ -163,14 +163,14 @@ namespace JStream {
     }
 
     bool JsonParser::enterArr() {
-        char c = skipWhitespace();
+        int c = skipWhitespace();
         if(c != '[') return false;
         stream->read();
         return true;
     }
 
     bool JsonParser::enterObj() {
-        char c = skipWhitespace();
+        int c = skipWhitespace();
         if(c != '{') return false;
         stream->read();
         return true;
@@ -211,7 +211,7 @@ namespace JStream {
 
     bool JsonParser::skipString(bool inStr) {
         if(!inStr) {
-            char c = skipWhitespace();
+            int c = skipWhitespace();
             if(c != '"') return false; 
             stream->read(); // Read opening '"'
         }
@@ -274,7 +274,7 @@ namespace JStream {
     }
 
     char JsonParser::skipWhitespace() {
-        char c;
+        int c;
         do {
             c = stream->peek();
             if(Internals::isNotWhitespace(c)) break;

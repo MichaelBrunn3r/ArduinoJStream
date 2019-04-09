@@ -17,7 +17,7 @@ namespace JStream {
 
     bool JsonParser::readString(String& buf, bool inStr) {
         if(!inStr) {
-            char c = skipWhitespace();
+            int c = skipWhitespace();
             if(c != '"') return false; 
             stream->read(); // Read opening '"'
         }
@@ -29,7 +29,7 @@ namespace JStream {
                 if(c == 0) break;
             } else if (c == '"') return true;
 
-            buf += c;
+            buf += (char)c;
             c = stream->read();
         }
 
@@ -74,7 +74,7 @@ namespace JStream {
         long result = 0;    
         long sign = 1;
         
-        char c = skipWhitespace();
+        int c = skipWhitespace();
         if(c == '-') {
             stream->read();
             c = stream->peek();
@@ -104,7 +104,7 @@ namespace JStream {
         Internals::NumAccumulator acc;
 
         // Determine number sign
-        char c = skipWhitespace();
+        int c = skipWhitespace();
         if(c == '-') {
             stream->read();
             c = stream->peek();
@@ -154,7 +154,7 @@ namespace JStream {
 
         bool result;
         char* compareTo;
-        char c = skipWhitespace();
+        int c = skipWhitespace();
         if(c == 't') {
             result = true;
             compareTo = (char*)str_true + 1;
@@ -179,7 +179,7 @@ namespace JStream {
     template<typename T>
     bool JsonParser::parseIntArray(std::vector<T>& vec, bool inArray) {
         if(!inArray) {
-            char c = skipWhitespace();
+            int c = skipWhitespace();
 
             if(c != '[') return false;
             stream->read();
@@ -189,7 +189,7 @@ namespace JStream {
         T sign = 1;
 
         bool moreThanOneDigits = false;
-        char c;
+        int c;
         do {
             c = stream->read();
             switch(c) {
@@ -224,14 +224,14 @@ namespace JStream {
 
     bool JsonParser::parseNumArray(std::vector<double>& vec, bool inArray) {
         if(!inArray) {
-            char c = skipWhitespace();
+            int c = skipWhitespace();
 
             if(c != '[') return false;
             stream->read();
         }
 
         Internals::NumAccumulator acc;
-        char c;
+        int c;
         do {
             c = stream->read();
             switch(c) {
