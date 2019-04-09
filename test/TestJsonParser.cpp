@@ -50,7 +50,7 @@ SCENARIO("JsonParser::atEnd", "[atEnd]") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.atEnd());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -73,7 +73,7 @@ SCENARIO("JsonParser::atEnd", "[atEnd]") {
 
             CAPTURE(json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.atEnd());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -112,7 +112,7 @@ SCENARIO("JsonParser::nextVal", "[nextVal]") {
 
             CAPTURE(json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.nextVal());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -142,7 +142,7 @@ SCENARIO("JsonParser::nextVal", "[nextVal]") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.nextVal());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -186,7 +186,7 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
             CAPTURE(testIdx, json);
 
             // Test capturing the key
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             String key = "";
             REQUIRE(parser.nextKey(&key));
@@ -194,7 +194,7 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
 
             // Test not capturing the key
-            stream = MockStringStream(json);
+            stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.nextKey(nullptr));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -229,7 +229,7 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
             CAPTURE(testIdx, json);
 
             // Test capturing the key
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             String key = "";
             REQUIRE_FALSE(parser.nextKey(&key));
@@ -238,7 +238,7 @@ SCENARIO("JsonParser::nextKey", "[nextKey]") {
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
 
             // Test not capturing the key
-            stream = MockStringStream(json);
+            stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.nextKey(nullptr));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -300,7 +300,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
 
             CAPTURE(testIdx, json, thekey);  
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             bool success = parser.findKey(thekey);
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -357,7 +357,7 @@ SCENARIO("JsonParser::findKey", "[findKey]") {
 
             CAPTURE(testIdx, json, thekey);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             bool success = parser.findKey(thekey);
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -385,14 +385,14 @@ TEST_CASE("JsonParser::enterArr && ::enterObj", "[enterCollection, enterArr, ent
             CAPTURE(testIdx, json);
 
             // enterArr
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.enterArr() == (collectionType == '['));
             if(collectionType == '[') CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
             else CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(String(collectionType) + json_after_exec));
 
             // enterObj
-            stream = MockStringStream(json);
+            stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.enterObj() == (collectionType == '{'));
             if(collectionType == '{') CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -416,13 +416,13 @@ TEST_CASE("JsonParser::enterArr && ::enterObj", "[enterCollection, enterArr, ent
             CAPTURE(testIdx, json);
 
             // enterArr
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.enterArr());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
 
             // enterObj
-            stream = MockStringStream(json);
+            stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.enterObj());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -474,7 +474,7 @@ SCENARIO("JsonParser::exitCollection" , "[exitCollection]") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.exitCollection(levels));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -499,7 +499,7 @@ SCENARIO("JsonParser::exitCollection" , "[exitCollection]") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.exitCollection(levels));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -536,7 +536,7 @@ SCENARIO("JsonParser::skipCollection", "[skipCollection]") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.skipCollection());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -579,7 +579,7 @@ SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipSt
             CAPTURE(testIdx, json);
 
             // readString
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             String str = "";
             REQUIRE(parser.readString(str, inStr));
@@ -587,7 +587,7 @@ SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipSt
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
 
             // skipString
-            stream = MockStringStream(json);
+            stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.skipString(inStr));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -614,7 +614,7 @@ SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipSt
             CAPTURE(testIdx, json);
 
             // readString
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             String str = "";
             REQUIRE_FALSE(parser.readString(str, inStr));
@@ -622,7 +622,7 @@ SCENARIO("JsonParser::readString & JsonParser::skipString", "[readString, skipSt
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
 
             // skipString
-            stream = MockStringStream(json);
+            stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.skipString(inStr));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -668,7 +668,7 @@ SCENARIO("JsonParser::strcmp", "[strcmp]") {
 
         CAPTURE(testIdx, json, str);
 
-        MockStringStream stream = MockStringStream(json);
+        MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
         parser.parse(&stream);
 
         REQUIRE(parser.strcmp(str, inStr) == expectedResult);
@@ -724,13 +724,13 @@ SCENARIO("JsonParser::find", "[find]") {
 
             CAPTURE(testIdx, json, path_str);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             Path path = Path(path_str);
             REQUIRE(parser.find(path));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
 
-            stream = MockStringStream(json);
+            stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.find(path_str));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -751,7 +751,7 @@ SCENARIO("JsonParser::find", "[find]") {
 
             CAPTURE(testIdx, json, path_str);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
 
             Path path = Path(path_str);
@@ -793,7 +793,7 @@ SCENARIO("JsonParser::parseInt") {
 
         CAPTURE(testIdx, json, json);
 
-        MockStringStream stream = MockStringStream(json);
+        MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
         parser.parse(&stream);
 
         long num = parser.parseInt();
@@ -863,7 +863,7 @@ SCENARIO("JsonParser::parseNum") {
         CAPTURE(testIdx, json);
         INFO("expected: " << expected_decimal);
 
-        MockStringStream stream = MockStringStream(json);
+        MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
         parser.parse(&stream);
 
         double decimal = parser.parseNum();
@@ -897,7 +897,7 @@ SCENARIO("JsonParser::parseBool") {
             CAPTURE(testIdx, json);
             INFO("expected:" << expected_bool);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
 
             bool result = parser.parseBool(!expected_bool);
@@ -926,7 +926,7 @@ SCENARIO("JsonParser::parseBool") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
 
             bool result = parser.parseBool();
@@ -977,7 +977,7 @@ SCENARIO("Parse Int Array") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             
             std::vector<long> vec;
@@ -1005,7 +1005,7 @@ SCENARIO("Parse Int Array") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             
             std::vector<long> vec;
@@ -1065,7 +1065,7 @@ SCENARIO("Parse Num Array") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             
             std::vector<double> vec;
@@ -1104,7 +1104,7 @@ SCENARIO("Parse Num Array") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             
             std::vector<double> vec;
@@ -1230,7 +1230,7 @@ SCENARIO("JsonParser::next", "[private, next]") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE(parser.next(n));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -1267,7 +1267,7 @@ SCENARIO("JsonParser::next", "[private, next]") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             REQUIRE_FALSE(parser.next(n));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -1298,7 +1298,7 @@ SCENARIO("JsonParser::skipWhitespace", "[private, skipWhitespace]") {
 
             CAPTURE(testIdx, json);
 
-            MockStringStream stream = MockStringStream(json);
+            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
             parser.parse(&stream);
             char firstNonWhitespace = parser.skipWhitespace();
             REQUIRE(firstNonWhitespace == expectedFirstNonWhitespace);
