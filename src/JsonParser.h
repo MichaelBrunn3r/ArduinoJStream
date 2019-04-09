@@ -99,6 +99,12 @@ namespace JStream {
             bool exitCollection(size_t levels=1);
             /** @brief Skips the next object/array in the stream */
             bool skipCollection();
+            /**
+             * @brief Reads the stream until the first non-whitespace char
+             * 
+             * @return char The first non-whitespace character in the stream, or -1 if the stream ended
+             */
+            char skipWhitespace();
             /** 
              * @brief Reads over a string in the stream
              * @param inStr Indicates whether the stream is positioned inside the string or before the opening '"'
@@ -142,21 +148,57 @@ namespace JStream {
             bool parseBool(bool defaultVal=false);
             /**
              * @brief Parses an array of integers
+             * @param ignoreNeg Indicates if the method should ignore/skip negative integers
              * @param inArray Indicates the opening '[' was alread read
              */
-            template <typename T>
-            bool parseIntArray(std::vector<T>& vec, bool inArray=false);
+            template<typename T>
+            bool parseIntArray(std::vector<T>& vec, bool ignoreNeg=false) {
+                T num = 0;
+                T sign = 1;
+
+                bool moreThanOneDigits = false;
+                int c;
+                do {
+                    c = stream->read();
+                    switch(c) {
+                        case ',':
+                            if(moreThanOneDigits) {
+                                vec.push_back(num*sign); // Save read number
+                                num = 0; // Reset num
+                                moreThanOneDigits = false;
+                            }
+                            sign = 1;
+
+                            break;
+                        case ']':
+                            if(moreThanOneDigits) vec.push_back(num*sign);
+                            return true;
+                        case '-':
+                            if(ignoreNeg) { // ignore/skip integer
+                                int c;
+                                do {
+                                    c = stream->read();
+                                    if(c == ',') goto CASE_NEG_END;
+                                    else if(c == ']') return true;
+                                } while(c > 0);
+                                return false;
+                            } else if(!moreThanOneDigits) sign = -1;
+                            CASE_NEG_END:
+                            break;
+                        case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
+                            num = num*10 + c - '0';
+                            moreThanOneDigits = true;
+                            break;
+                    }
+                } while(c>0);
+
+                return false;
+            }
             /**
              * @brief Parses an array of json numbers
              * @param inArray Indicates the opening '[' was alread read
              */
             bool parseNumArray(std::vector<double>& vec, bool inArray=false);
-            /**
-             * @brief Reads the stream until the first non-whitespace char
-             * 
-             * @return char The first non-whitespace character in the stream, or -1 if the stream ended
-             */
-            char skipWhitespace();
         private:
             Stream* stream;
 

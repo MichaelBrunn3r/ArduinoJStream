@@ -176,52 +176,6 @@ namespace JStream {
         return result;
     }
 
-    template<typename T>
-    bool JsonParser::parseIntArray(std::vector<T>& vec, bool inArray) {
-        if(!inArray) {
-            int c = skipWhitespace();
-
-            if(c != '[') return false;
-            stream->read();
-        }
-
-        T num = 0;
-        T sign = 1;
-
-        bool moreThanOneDigits = false;
-        int c;
-        do {
-            c = stream->read();
-            switch(c) {
-                case ',':
-                    if(moreThanOneDigits) {
-                        vec.push_back(num*sign); // Save read number
-                        num = 0; // Reset num
-                        moreThanOneDigits = false;
-                    }
-                    sign = 1;
-
-                    break;
-                case ']':
-                    if(moreThanOneDigits) vec.push_back(num*sign);
-                    return true;
-                case '-':
-                    if(!moreThanOneDigits) sign = -1;
-                    break;
-                case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    num = num*10 + c - '0';
-                    moreThanOneDigits = true;
-                    break;
-            }
-        } while(c>0);
-
-        return false;
-    }
-
-    template bool JsonParser::parseIntArray<byte>(std::vector<byte>& vec, bool inArray);
-    template bool JsonParser::parseIntArray<char>(std::vector<char>& vec, bool inArray);
-    template bool JsonParser::parseIntArray<long>(std::vector<long>& vec, bool inArray);
-
     bool JsonParser::parseNumArray(std::vector<double>& vec, bool inArray) {
         if(!inArray) {
             int c = skipWhitespace();
