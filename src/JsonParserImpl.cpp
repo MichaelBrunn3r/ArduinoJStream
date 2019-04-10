@@ -4,10 +4,10 @@
 
 namespace JStream {
     JsonParser::JsonParser() {}
-    JsonParser::JsonParser(Stream* stream) : stream(stream) {}
+    JsonParser::JsonParser(Stream& stream) : mStream(&stream) {}
 
-    void JsonParser::parse(Stream* stream) {
-        this->stream = stream;
+    void JsonParser::parse(Stream& stream) {
+        mStream = &stream;
     }
 
     bool JsonParser::atEnd() {
@@ -19,18 +19,18 @@ namespace JStream {
         if(!inStr) {
             int c = skipWhitespace();
             if(c != '"') return false; 
-            stream->read(); // Read opening '"'
+            mStream->read(); // Read opening '"'
         }
 
-        int c = stream->read();
+        int c = mStream->read();
         while(c != 0 && c != -1) {
             if(c == '\\') {
-                c = Internals::escape(stream->read());
+                c = Internals::escape(mStream->read());
                 if(c == 0) break;
             } else if (c == '"') return true;
 
             buf += (char)c;
-            c = stream->read();
+            c = mStream->read();
         }
 
         return false; // Stream ended without closing the string
@@ -39,15 +39,15 @@ namespace JStream {
     int JsonParser::strcmp(const char* cstr, bool inStr) {
         if(!inStr) {
             skipWhitespace();
-            if(stream->read() != '"') return false; // Read opening '"'
+            if(mStream->read() != '"') return false; // Read opening '"'
         }
 
         int c = -1;
         while(*cstr) {
-            c = stream->read();
+            c = mStream->read();
 
             if(c == '\\') {
-                if(!(c = Internals::escape(stream->read()))) {
+                if(!(c = Internals::escape(mStream->read()))) {
                     skipString(true);
                     return 1; // char is unescapeable -> any string is bigger than an incorrect one
                 }
@@ -61,7 +61,7 @@ namespace JStream {
             cstr++;
         }
 
-        c = stream->read();
+        c = mStream->read();
         if(c == '"') return 0;
         else if(c == -1 || c == 0) return 1;
         else {
@@ -76,8 +76,8 @@ namespace JStream {
         
         int c = skipWhitespace();
         if(c == '-') {
-            stream->read();
-            c = stream->peek();
+            mStream->read();
+            c = mStream->peek();
             sign = -1;
         }
 
@@ -85,13 +85,13 @@ namespace JStream {
         while(c>0) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    result = result*10 + stream->read() - '0';
+                    result = result*10 + mStream->read() - '0';
                     moreThanOneDigit = true;
                     break;
                 default:
                     goto END_PARSING;
             }
-            c = stream->peek();
+            c = mStream->peek();
         }
         END_PARSING:
 
@@ -106,34 +106,34 @@ namespace JStream {
         // Determine number sign
         int c = skipWhitespace();
         if(c == '-') {
-            stream->read();
-            c = stream->peek();
+            mStream->read();
+            c = mStream->peek();
             acc.sign = -1;
         }
 
         // Parse number
-        while(c = stream->peek()) {
+        while((c = mStream->peek())) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                    acc.addDigitToSegment(stream->read() - '0');
+                    acc.addDigitToSegment(mStream->read() - '0');
                     break;
                 case '.':
                     if(!acc.segmentHasAtLeastOneDigit) return defaultVal; // Check if prev segment has >=1 digits
 
-                    stream->read();
+                    mStream->read();
                     acc.setSegment(Internals::NumAccumulator::NumSegment::DECIMAL);
                     break;
                 case 'e': case 'E':
                     if(!acc.segmentHasAtLeastOneDigit) return defaultVal; // Check if prev segment has >=1 digits
 
-                    stream->read();
+                    mStream->read();
                     acc.setSegment(Internals::NumAccumulator::NumSegment::EXPONENT);
 
                     c = skipWhitespace();
 
-                    if(c == '+') stream->read();
+                    if(c == '+') mStream->read();
                     else if(c == '-') {
-                        stream->read();
+                        mStream->read();
                         acc.expSign = -1;
                     }
                     break;
@@ -165,11 +165,11 @@ namespace JStream {
         }
         else return defaultVal;
 
-        stream->read();
+        mStream->read();
 
         while(*compareTo) {
-            if(stream->peek() != *compareTo) return defaultVal;
-            stream->read();
+            if(mStream->peek() != *compareTo) return defaultVal;
+            mStream->read();
             compareTo++;
         }
 
@@ -181,13 +181,13 @@ namespace JStream {
             int c = skipWhitespace();
 
             if(c != '[') return false;
-            stream->read();
+            mStream->read();
         }
 
         Internals::NumAccumulator acc;
         int c;
         do {
-            c = stream->read();
+            c = mStream->read();
             switch(c) {
                 case ',':
                     if(acc.segmentHasAtLeastOneDigit) vec.push_back(acc.get()); // Save read number

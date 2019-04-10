@@ -9,9 +9,9 @@ namespace JStream {
     class JsonParser {
         public:
             JsonParser();
-            JsonParser(Stream* stream);
+            JsonParser(Stream& stream);
 
-            void parse(Stream* stream);
+            void parse(Stream& stream);
             /** @brief Returns true if the stream is at the closing '}'/']' of the current parent object/array */
             bool atEnd();
             /**
@@ -159,44 +159,44 @@ namespace JStream {
                 if(!inArray) {
                     int c = skipWhitespace();
                     if(c != '[') return false;
-                    stream->read();
+                    mStream->read();
                 }
 
                 T num = 0;
                 T sign = 1;
 
-                bool moreThanOneDigits = false;
+                bool atLeastOneDigit = false;
                 int c;
                 do {
-                    c = stream->read();
+                    c = mStream->read();
                     switch(c) {
                         case ',':
-                            if(moreThanOneDigits) {
+                            if(atLeastOneDigit) {
                                 vec.push_back(num*sign); // Save read number
                                 num = 0; // Reset num
-                                moreThanOneDigits = false;
+                                atLeastOneDigit = false;
                             }
                             sign = 1;
 
                             break;
                         case ']':
-                            if(moreThanOneDigits) vec.push_back(num*sign);
+                            if(atLeastOneDigit) vec.push_back(num*sign);
                             return true;
                         case '-':
                             if(ignoreNeg) { // ignore/skip integer
                                 int c;
                                 do {
-                                    c = stream->read();
+                                    c = mStream->read();
                                     if(c == ',') goto CASE_NEG_END;
                                     else if(c == ']') return true;
                                 } while(c > 0);
                                 return false;
-                            } else if(!moreThanOneDigits) sign = -1;
+                            } else if(!atLeastOneDigit) sign = -1;
                             CASE_NEG_END:
                             break;
                         case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
                             num = num*10 + c - '0';
-                            moreThanOneDigits = true;
+                            atLeastOneDigit = true;
                             break;
                     }
                 } while(c>0);
@@ -209,7 +209,7 @@ namespace JStream {
              */
             bool parseNumArray(std::vector<double>& vec, bool inArray=false);
         private:
-            Stream* stream;
+            Stream* mStream;
 
             /**
              * @brief Reads the stream until the start of the n-th succeeding key/value in the current object/array

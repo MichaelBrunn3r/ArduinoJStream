@@ -11,8 +11,8 @@ namespace JStream {
 
         skipWhitespace();
         do {
-            if(stream->peek() != '"') continue; // not start of a string -> cannot be a key -> try matching next key
-            stream->read();
+            if(mStream->peek() != '"') continue; // not start of a string -> cannot be a key -> try matching next key
+            mStream->read();
 
             if(buf == nullptr) {
                 if(!skipString(true)) continue;
@@ -27,7 +27,7 @@ namespace JStream {
                 if(buf != nullptr) *buf = "";
                 continue;
             }
-            stream->read();
+            mStream->read();
 
             skipWhitespace();
             return true;
@@ -41,18 +41,18 @@ namespace JStream {
         skipWhitespace();
         do {
             // Verify start of key 
-            if(stream->peek() != '"') continue;  // not start of a string -> cannot be a key -> try matching next key
-            stream->read();
+            if(mStream->peek() != '"') continue;  // not start of a string -> cannot be a key -> try matching next key
+            mStream->read();
 
             // Match key and thekey by comparing each char
             const char* thekey_it = thekey; // iterator over thekey
             while(*thekey_it) {
-                int c = stream->read();
+                int c = mStream->read();
 
                 if(c == 0) return false; // Stream ended
 
                 if(c == '\\') { // Escape char
-                    c = Internals::escape(stream->read());
+                    c = Internals::escape(mStream->read());
                     
                     // Skip current key if char is unescapable
                     if(c==0) {
@@ -72,15 +72,15 @@ namespace JStream {
             }
 
             // Check if matching was sucessful
-            if(*thekey_it != 0 || stream->peek() != '"') { // len(thekey) =/= len(key) -> one is prefix of the other -> no match
+            if(*thekey_it != 0 || mStream->peek() != '"') { // len(thekey) =/= len(key) -> one is prefix of the other -> no match
                 skipString(true);
                 continue; // try matching next key
-            } else stream->read(); // Read closing '"'
+            } else mStream->read(); // Read closing '"'
 
             int c = skipWhitespace(); // Whitespace between key and ':'
 
             if(c != ':') continue; // No ':' after matched string -> not a valid json key -> try matching next key
-            else stream->read();
+            else mStream->read();
 
             skipWhitespace(); // Whitespace before value (e.g "'key':   123")
 
@@ -94,9 +94,9 @@ namespace JStream {
 
         for(auto it=path.begin(); it!=path.end(); ++it) {
             if(it!=path.begin()) {
-                int c = stream->peek();
+                int c = mStream->peek();
                 if(c != '{' && c != '[') return false;
-                stream->read();
+                mStream->read();
             }
             
             if(it->type == PathSegmentType::OFFSET) {
@@ -112,9 +112,9 @@ namespace JStream {
         const char* start = path;
         while(*path) { 
             if(path != start) {
-                int c = stream->peek();
+                int c = mStream->peek();
                 if(c != '{' && c != '[') return false;
-                stream->read();
+                mStream->read();
             }
 
             if(*path == '[') { // array path segment
@@ -165,14 +165,14 @@ namespace JStream {
     bool JsonParser::enterArr() {
         int c = skipWhitespace();
         if(c != '[') return false;
-        stream->read();
+        mStream->read();
         return true;
     }
 
     bool JsonParser::enterObj() {
         int c = skipWhitespace();
         if(c != '{') return false;
-        stream->read();
+        mStream->read();
         return true;
     }
     
@@ -181,7 +181,7 @@ namespace JStream {
 
         int c;
         do {
-            c = stream->read();
+            c = mStream->read();
             switch(c) {
                 case '{': case '[':
                     levels++;
@@ -202,7 +202,7 @@ namespace JStream {
     bool JsonParser::skipCollection() {
         int c;
         do {
-            c = stream->read();
+            c = mStream->read();
             if(c == '[' || c == '{') return exitCollection();
         } while(c!=-1 && c!=0);
 
@@ -213,15 +213,15 @@ namespace JStream {
         if(!inStr) {
             int c = skipWhitespace();
             if(c != '"') return false; 
-            stream->read(); // Read opening '"'
+            mStream->read(); // Read opening '"'
         }
 
-        int c = stream->read();
+        int c = mStream->read();
         do {
-            if(c == '\\') stream->read();
+            if(c == '\\') mStream->read();
             else if(c == '"') return true;
 
-            c = stream->read();
+            c = mStream->read();
         } while(c != 0 && c != -1);
 
         return false; // Stream ended without closing the string
@@ -239,11 +239,11 @@ namespace JStream {
 
         size_t nesting = 0;
 
-        int c = stream->peek();
+        int c = mStream->peek();
         while(c!=-1 && c!=0) {
             switch(c) {
                 case '{': case '[': // Start of a nested object
-                    stream->read();
+                    mStream->read();
                     exitCollection();
                     break;
                 case '}': case ']': // End of current object/array, no next key/value
@@ -252,7 +252,7 @@ namespace JStream {
                     skipString();
                     break;
                 case ',':
-                    stream->read();
+                    mStream->read();
                     if(nesting > 0) break;
                         
                     // Reached start of next key/value
@@ -263,10 +263,10 @@ namespace JStream {
                     }
                     
                     break;
-                default: stream->read();
+                default: mStream->read();
             }
 
-            c = stream->peek();
+            c = mStream->peek();
         }
 
         // Stream ended, no next key/value
@@ -276,9 +276,9 @@ namespace JStream {
     char JsonParser::skipWhitespace() {
         int c;
         do {
-            c = stream->peek();
+            c = mStream->peek();
             if(Internals::isNotWhitespace(c)) break;
-            stream->read();
+            mStream->read();
         } while(c > 0);
 
         return c;
