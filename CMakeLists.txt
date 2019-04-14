@@ -19,3 +19,13 @@ add_custom_target(updateMockArduino
     COMMAND mv MockArduino/native MockArduino/MockArduinoNative
     COMMAND mv MockArduino/MockArduinoNative ${CMAKE_SOURCE_DIR}/lib
 )
+
+add_custom_target(createRelease
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+
+    COMMAND rm -f ArduinoJStream.zip
+    COMMAND cp -R src ArduinoJStream
+    COMMAND cp LICENSE ArduinoJStream
+    COMMAND zip -r ArduinoJStream.zip ArduinoJStream
+    COMMAND rm -r ArduinoJStream
+)

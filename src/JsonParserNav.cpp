@@ -277,7 +277,7 @@ namespace JStream {
         int c;
         do {
             c = mStream->peek();
-            if(Internals::isNotWhitespace(c)) break;
+            if(!Internals::isWhitespace(c)) break;
             mStream->read();
         } while(c > 0);
 

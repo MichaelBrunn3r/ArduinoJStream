@@ -4,6 +4,7 @@
 #include <Stream.h>
 #include <Path.h>
 #include <limits>
+#include <WString.h>
 
 namespace JStream {
     class JsonParser {
@@ -209,7 +210,7 @@ namespace JStream {
              */
             bool parseNumArray(std::vector<double>& vec, bool inArray=false);
         private:
-            Stream* mStream;
+            Stream* mStream = nullptr;
 
             /**
              * @brief Reads the stream until the start of the n-th succeeding key/value in the current object/array

@@ -19,10 +19,10 @@
 
 using namespace JStream;
 
-SCENARIO("stol") {
-    JsonParser parser;
+TEST_CASE("::stol") {
+    JsonParser parser();
 
-    GIVEN("valid longs") {
+    SECTION("valid longs") {
         std::vector<std::tuple<const char*, long, long>> parse = {
             {"0", -1, 0},
             {"123", -1, 123},
@@ -49,7 +49,7 @@ SCENARIO("stol") {
         }
     }
 
-    GIVEN("invalid longs") {
+    SECTION("invalid longs") {
         std::vector<std::tuple<const char*, long>> parse = {
             {"", -1},
 
@@ -74,10 +74,10 @@ SCENARIO("stol") {
     }
 }
 
-SCENARIO("stod") {
-    JsonParser parser;
+TEST_CASE("::stod") {
+    JsonParser parser();
 
-    GIVEN("valid longs") {
+    SECTION("valid longs") {
         std::vector<std::tuple<const char*, double, double>> parse = {
             // Ints
             {"1", -1, 1},

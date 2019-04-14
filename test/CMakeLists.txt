@@ -20,8 +20,11 @@ target_include_directories(ArduinoJStream PUBLIC ${CMAKE_SOURCE_DIR}/test/MockAr
 # Executables #
 ###############
 
-add_executable(TestJsonParser TestJsonParser.cpp)
-target_link_libraries(TestJsonParser MockArduino Catch2 ArduinoJStream)
+add_executable(TestParserImpl TestParserImpl.cpp)
+target_link_libraries(TestParserImpl MockArduino Catch2 ArduinoJStream)
+
+add_executable(TestParserNav TestParserNav.cpp)
+target_link_libraries(TestParserNav MockArduino Catch2 ArduinoJStream)
 
 add_executable(TestJsonUtils TestJsonUtils.cpp)
 target_link_libraries(TestJsonUtils MockArduino Catch2 ArduinoJStream)
@@ -30,5 +33,7 @@ target_link_libraries(TestJsonUtils MockArduino Catch2 ArduinoJStream)
 # Targets #
 ###########
 
-add_custom_target(testJsonParser ./TestJsonParser DEPENDS TestJsonParser)
-add_custom_target(testJsonUtils ./TestJsonUtils DEPENDS TestJsonUtils)
+add_custom_target(runTestParserImpl COMMAND ./TestParserImpl DEPENDS TestParserImpl)
+add_custom_target(runTestParserNav COMMAND ./TestParserNav DEPENDS TestParserNav)
+add_custom_target(runTestJsonUtils COMMAND ./TestJsonUtils DEPENDS TestJsonUtils)
+add_custom_target(runTestAll COMMAND make runTestParserImpl && make runTestParserNav && make runTestJsonUtils)
