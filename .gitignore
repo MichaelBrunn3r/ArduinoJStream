@@ -1,6 +1,7 @@
 # Ignore all files without extension
 !Makefile
 
+# IDE dirs/files
 .pio
 .pioenvs
 .piolibdeps
@@ -8,11 +9,18 @@
 /backup
 platformio.ini
 
-build
-test/main\.cpp
+# Arduino Files
 src/main\.cpp
+
+# Dependencies
+test/Arduino/
 lib/MockArduinoNative/
 test/MockArduino/
 
+# Build dirs/files
+build
+*.gcno
+*.o
+*.gcda
 ArduinoJStream
 ArduinoJStream.zip

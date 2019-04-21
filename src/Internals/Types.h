@@ -1,5 +1,7 @@
 #pragma once
-#include <stdint.h>
 
-typedef uint8_t byte;
-typedef uint16_t word;
+#ifndef Arduino_h
+    #include <stdint.h>
+    typedef uint8_t byte;
+    typedef uint16_t word;
+#endif
