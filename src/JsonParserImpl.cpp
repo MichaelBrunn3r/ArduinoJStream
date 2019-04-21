@@ -1,6 +1,7 @@
 #include "JsonParser.h"
 #include <Internals/JsonUtils.h>
 #include <Internals/NumAccumulator.h>
+#include <iostream>
 
 namespace JStream {
     JsonParser::JsonParser() {}
@@ -12,7 +13,7 @@ namespace JStream {
 
     bool JsonParser::atEnd() {
         int c = skipWhitespace();
-        return c!=0 && c!=-1 && c != '}' && c != ']';
+        return c==0 || c==-1 || c == '}' || c == ']';
     }
 
     bool JsonParser::readString(String& buf, bool inStr) {
