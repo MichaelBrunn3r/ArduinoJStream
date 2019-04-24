@@ -24,7 +24,7 @@ namespace JStream {
         }
 
         int c = mStream->read();
-        while(c != 0 && c != -1) {
+        while(c >= 0) {
             if(c == '\\') {
                 c = Internals::escape(mStream->read());
                 if(c == 0) break;
@@ -44,7 +44,7 @@ namespace JStream {
         }
 
         int c = -1;
-        while(*cstr) {
+        while(static_cast<unsigned char>(*cstr)) {
             c = mStream->read();
 
             if(c == '\\') {
@@ -54,9 +54,9 @@ namespace JStream {
                 }
             } else if(c == '"') return 1; // stream_stream ended but cstr didn't -> cstr > stream_str
 
-            if(*cstr != c) {
+            if(static_cast<unsigned char>(*cstr) != c) {
                 skipString(true);
-                return *cstr > c ? 1 : -1;
+                return static_cast<unsigned char>(*cstr) > c ? 1 : -1;
             }
 
             cstr++;
@@ -83,7 +83,7 @@ namespace JStream {
         }
 
         bool moreThanOneDigit = false;
-        while(c>0) {
+        while(c >= 0) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
                     result = result*10 + mStream->read() - '0';
@@ -113,7 +113,7 @@ namespace JStream {
         }
 
         // Parse number
-        while((c = mStream->peek())) {
+        while((c = mStream->peek()) >= 0) {
             switch(c) {
                 case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
                     acc.addDigitToSegment(mStream->read() - '0');
@@ -169,7 +169,7 @@ namespace JStream {
         mStream->read();
 
         while(*compareTo) {
-            if(mStream->peek() != *compareTo) return defaultVal;
+            if(mStream->peek() != static_cast<unsigned char>(*compareTo)) return defaultVal;
             mStream->read();
             compareTo++;
         }
@@ -222,7 +222,7 @@ namespace JStream {
                     acc.setSegment(Internals::NumAccumulator::NumSegment::EXPONENT);
                     break;
             }
-        } while(c>0);
+        } while(c >= 0);
 
         return false;
     }

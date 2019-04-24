@@ -46,10 +46,9 @@ namespace JStream {
 
             // Match key and thekey by comparing each char
             const char* thekey_it = thekey; // iterator over thekey
-            while(*thekey_it) {
+            while(static_cast<unsigned char>(*thekey_it)) {
                 int c = mStream->read();
-
-                if(c == 0) return false; // Stream ended
+                if(c < 0) return false; // Stream ended
 
                 if(c == '\\') { // Escape char
                     c = Internals::escape(mStream->read());
@@ -62,7 +61,7 @@ namespace JStream {
                 } else if(c == '"') goto NEXT_KEY; // Unescaped '"' terminates key -> thekey is longer than key -> try matching next key
 
                 // Match key[idx] with thekey[idx]
-                if(c != *thekey_it) { // key[idx] != thekey[idx] -> key doesn't match thekey
+                if(c != static_cast<unsigned char>(*thekey_it)) { // key[idx] != thekey[idx] -> key doesn't match thekey
                     skipString(true);
                     goto NEXT_KEY;
                 }
@@ -110,7 +109,7 @@ namespace JStream {
 
     bool JsonParser::find(const char* path) {
         const char* start = path;
-        while(*path) { 
+        while(static_cast<unsigned char>(*path)) { 
             if(path != start) {
                 int c = mStream->peek();
                 if(c != '{' && c != '[') return false;
@@ -122,7 +121,7 @@ namespace JStream {
 
                 // Read offset
                 size_t offset = 0;
-                while(*path) {
+                while(static_cast<unsigned char>(*path)) {
                     if(Internals::isDecDigit(*path)) {
                         offset = offset*10 + *path++ - '0';
                     } else if(*path == ']') {
@@ -140,7 +139,7 @@ namespace JStream {
 
                 // Read key
                 String keyBuf = "";
-                while(*path) {
+                while(static_cast<unsigned char>(*path)) {
                     switch(*path) {
                         case '[':
                             goto END_READ_KEY;
@@ -194,7 +193,7 @@ namespace JStream {
                     skipString(true);
                     break;
             }
-        } while(c!=-1 && c!=0);
+        } while(c >= 0);
 
         return false;
     }
@@ -204,7 +203,7 @@ namespace JStream {
         do {
             c = mStream->read();
             if(c == '[' || c == '{') return exitCollection();
-        } while(c!=-1 && c!=0);
+        } while(c >= 0);
 
         return false;
     }
@@ -222,7 +221,7 @@ namespace JStream {
             else if(c == '"') return true;
 
             c = mStream->read();
-        } while(c != 0 && c != -1);
+        } while(c >= 0);
 
         return false; // Stream ended without closing the string
     }
@@ -240,7 +239,7 @@ namespace JStream {
         size_t nesting = 0;
 
         int c = mStream->peek();
-        while(c!=-1 && c!=0) {
+        while(c >= 0) {
             switch(c) {
                 case '{': case '[': // Start of a nested object
                     mStream->read();
@@ -279,7 +278,7 @@ namespace JStream {
             c = mStream->peek();
             if(!Internals::isWhitespace(c)) break;
             mStream->read();
-        } while(c > 0);
+        } while(c >= 0);
 
         return c;
     }
