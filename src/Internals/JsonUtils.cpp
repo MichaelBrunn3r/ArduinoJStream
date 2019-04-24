@@ -3,7 +3,7 @@
 
 namespace JStream {
     namespace Internals {
-        char escape(const char c) {
+        unsigned char escape(const unsigned char c) {
             switch(c) {
                 case '"': return '"';
                 case '\\': return '\\';
@@ -21,18 +21,18 @@ namespace JStream {
             long result = 0;    
             long sign = 1;
 
-            while(isWhitespace(*str)) str++; // Skip whitespace
+            while(isWhitespace(static_cast<unsigned char>(*str))) str++; // Skip whitespace
 
-            if(*str == '-') {
+            if(static_cast<unsigned char>(*str) == '-') {
                 str++;
                 sign = -1;
             }
 
             bool atLeastOneDigit = false;
-            while(*str) {
-                switch(*str) {
+            while(static_cast<unsigned char>(*str)) {
+                switch(static_cast<unsigned char>(*str)) {
                     case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                        result = result*10 + *str++ - '0';
+                        result = result*10 + static_cast<unsigned char>(*str++) - '0';
                         atLeastOneDigit = true;
                         break;
                     default:
@@ -49,19 +49,19 @@ namespace JStream {
         double stod(const char* str, double defaultVal) {
             NumAccumulator acc;
 
-            while(isWhitespace(*str)) str++; // Skip whitespace
+            while(isWhitespace(static_cast<unsigned char>(*str))) str++; // Skip whitespace
 
             // Determine number sign
-            if(*str == '-') {
+            if(static_cast<unsigned char>(*str) == '-') {
                 str++;
                 acc.sign = -1;
             }
 
             // Parse number
-            while(*str) {
+            while(static_cast<unsigned char>(*str)) {
                 switch(*str) {
                     case  '0': case  '1': case  '2': case  '3': case  '4': case  '5': case  '6': case  '7': case  '8': case  '9':
-                        acc.addDigitToSegment(*str++ - '0');
+                        acc.addDigitToSegment(static_cast<unsigned char>(*str++) - '0');
                         break;
                     case '.':
                         if(!acc.segmentHasAtLeastOneDigit) return defaultVal; // Check if prev segment has >=1 digits
@@ -75,10 +75,10 @@ namespace JStream {
                         str++;
                         acc.setSegment(Internals::NumAccumulator::NumSegment::EXPONENT);
 
-                        while(isWhitespace(*str)) str++; // Skip whitespace
+                        while(isWhitespace(static_cast<unsigned char>(*str))) str++; // Skip whitespace
 
-                        if(*str == '+') str++;
-                        else if(*str == '-') {
+                        if(static_cast<unsigned char>(*str) == '+') str++;
+                        else if(static_cast<unsigned char>(*str) == '-') {
                             str++;
                             acc.expSign = -1;
                         }
