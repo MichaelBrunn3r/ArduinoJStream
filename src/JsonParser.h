@@ -106,7 +106,7 @@ namespace JStream {
              * 
              * @return char The first non-whitespace character in the stream, or -1 if the stream ended
              */
-            char skipWhitespace();
+            int skipWhitespace();
             /** 
              * @brief Reads over a string in the stream
              * @param inStr Indicates whether the stream is positioned inside the string or before the opening '"'

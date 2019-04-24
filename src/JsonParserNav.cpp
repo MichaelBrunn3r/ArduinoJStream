@@ -273,7 +273,7 @@ namespace JStream {
         return false;
     }
 
-    char JsonParser::skipWhitespace() {
+    int JsonParser::skipWhitespace() {
         int c;
         do {
             c = mStream->peek();
