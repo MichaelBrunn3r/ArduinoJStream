@@ -12,11 +12,6 @@ platformio.ini
 # Arduino Files
 src/main\.cpp
 
-# Dependencies
-test/Arduino/
-lib/MockArduinoNative/
-test/MockArduino/
-
 # Build dirs/files
 build
 *.gcno
