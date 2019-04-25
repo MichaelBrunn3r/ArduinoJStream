@@ -1,0 +1,8 @@
+[submodule "lib/ArduinoTestUtils"]
+	path = lib/ArduinoTestUtils
+	url = https://github.com/MichaelBrunn3r/ArduinoTestUtils.git
+	ignore = dirty
+[submodule "test/Arduino"]
+	path = test/Arduino
+	url = https://github.com/esp8266/Arduino.git
+	ignore = dirty

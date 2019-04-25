@@ -9,7 +9,6 @@
 
 #include <Arduino.h>
 #include <JsonParser.h>
-#include <MockStringStream.h>
 
 #define protected public
 #define private   public
