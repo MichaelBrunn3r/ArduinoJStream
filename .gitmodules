@@ -1,0 +1,3 @@
+[submodule "lib/ArduinoTestUtils"]
+	path = lib/ArduinoTestUtils
+	url = https://github.com/MichaelBrunn3r/ArduinoTestUtils.git

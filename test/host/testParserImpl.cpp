@@ -9,7 +9,7 @@
 #include <cmath>
 
 #include <Arduino.h>
-#include <MockStringStream.h>
+#include <MockStream.h>
 
 #define protected public
 #define private   public
@@ -44,16 +44,16 @@ TEST_CASE("JsonParser::atEnd", "[atEnd]") {
             {"\"😀😃😄😁😆😅🤣😂🙂🙃😉😊😇\"]", "\"😀😃😄😁😆😅🤣😂🙂🙃😉😊😇\"]"},
         };
 
-        for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+        for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = tests.at(testIdx).first;
             const char* json_after_exec = tests.at(testIdx).second;
 
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
-            REQUIRE(parser.atEnd());
+            REQUIRE_FALSE(parser.atEnd());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
@@ -68,15 +68,15 @@ TEST_CASE("JsonParser::atEnd", "[atEnd]") {
             {"  ]", "]"}
         };
 
-        for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+        for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = tests.at(testIdx).first;
             const char* json_after_exec = tests.at(testIdx).second;
 
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
-            REQUIRE_FALSE(parser.atEnd());
+            REQUIRE(parser.atEnd());
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
     }
@@ -108,7 +108,7 @@ TEST_CASE("JsonParser::readString & JsonParser::skipString", "[readString, skipS
             {"123\"", true, "123", ""},
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             const bool inStr = std::get<1>(tests.at(testIdx));
             const char* expected_str = std::get<2>(tests.at(testIdx));
@@ -118,7 +118,7 @@ TEST_CASE("JsonParser::readString & JsonParser::skipString", "[readString, skipS
             CAPTURE(json);
 
             // readString
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             String str = "";
             REQUIRE(parser.readString(str, inStr));
@@ -126,7 +126,7 @@ TEST_CASE("JsonParser::readString & JsonParser::skipString", "[readString, skipS
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
 
             // skipString
-            stream = MockArduino::Native::MockStringStream(json);
+            stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             REQUIRE(parser.skipString(inStr));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -144,7 +144,7 @@ TEST_CASE("JsonParser::readString & JsonParser::skipString", "[readString, skipS
             {"\r\n\t }", false, "", "}"},
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             const bool inStr = std::get<1>(tests.at(testIdx));
             const char* expected_str = std::get<2>(tests.at(testIdx));
@@ -154,7 +154,7 @@ TEST_CASE("JsonParser::readString & JsonParser::skipString", "[readString, skipS
             CAPTURE(json);
 
             // readString
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             String str = "";
             REQUIRE_FALSE(parser.readString(str, inStr));
@@ -162,7 +162,7 @@ TEST_CASE("JsonParser::readString & JsonParser::skipString", "[readString, skipS
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
 
             // skipString
-            stream = MockArduino::Native::MockStringStream(json);
+            stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             REQUIRE_FALSE(parser.skipString(inStr));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -199,7 +199,7 @@ TEST_CASE("JsonParser::strcmp", "[strcmp]") {
         {"a\\b, suffix", "ab", true, 1, ""},
     };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
         const char* json = std::get<0>(tests.at(testIdx));
         const char* str = std::get<1>(tests.at(testIdx));
         bool inStr = std::get<2>(tests.at(testIdx));
@@ -210,7 +210,7 @@ TEST_CASE("JsonParser::strcmp", "[strcmp]") {
         CAPTURE(json);
         CAPTURE(str);
 
-        MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+        ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
         parser.parse(stream);
 
         REQUIRE(parser.strcmp(str, inStr) == expectedResult);
@@ -242,7 +242,7 @@ TEST_CASE("JsonParser::parseInt") {
         {"123, 456", 123, ", 456"},
     };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
         const char* json = std::get<0>(tests.at(testIdx));
         long expected_int = std::get<1>(tests.at(testIdx));
         const char* json_after_exec = std::get<2>(tests.at(testIdx));
@@ -250,7 +250,7 @@ TEST_CASE("JsonParser::parseInt") {
         CAPTURE(testIdx);
         CAPTURE(json);
 
-        MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+        ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
         parser.parse(stream);
 
         long num = parser.parseInt();
@@ -312,7 +312,7 @@ TEST_CASE("JsonParser::parseNum") {
         {"1. 2", 0.0, " 2"},
     };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
         const char* json = std::get<0>(tests.at(testIdx));
         double expected_decimal = std::get<1>(tests.at(testIdx));
         const char* json_after_exec = std::get<2>(tests.at(testIdx));
@@ -321,7 +321,7 @@ TEST_CASE("JsonParser::parseNum") {
         CAPTURE(json);
         INFO("expected: " << expected_decimal);
 
-        MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+        ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
         parser.parse(stream);
 
         double decimal = parser.parseNum();
@@ -347,7 +347,7 @@ TEST_CASE("JsonParser::parseBool") {
             {"\r\n\t true\r\n\t ", true, "\r\n\t "},
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             bool expected_bool = std::get<1>(tests.at(testIdx));
             const char* json_after_exec = std::get<2>(tests.at(testIdx));
@@ -356,7 +356,7 @@ TEST_CASE("JsonParser::parseBool") {
             CAPTURE(json);
             INFO("expected:" << expected_bool);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
 
             bool result = parser.parseBool(!expected_bool);
@@ -379,14 +379,14 @@ TEST_CASE("JsonParser::parseBool") {
             {"tsue", "sue"},
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             const char* json_after_exec = std::get<1>(tests.at(testIdx));
 
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
 
             bool result = parser.parseBool();
@@ -427,7 +427,7 @@ TEST_CASE("Parse Int Array") {
             {",,,1,2], suffix", true, {1,2}, ", suffix"},
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             bool inArray = std::get<1>(tests.at(testIdx));
             std::vector<long> expected_vec = std::get<2>(tests.at(testIdx));
@@ -436,7 +436,7 @@ TEST_CASE("Parse Int Array") {
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             
             std::vector<long> vec;
@@ -457,7 +457,7 @@ TEST_CASE("Parse Int Array") {
             {"[-1,-2,-3], suffix", false, {}, ", suffix"},
         };
 
-        for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+        for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             bool inArray = std::get<1>(tests.at(testIdx));
             std::vector<long> expected_vec = std::get<2>(tests.at(testIdx));
@@ -466,7 +466,7 @@ TEST_CASE("Parse Int Array") {
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             
             std::vector<unsigned long> vec;
@@ -490,7 +490,7 @@ TEST_CASE("Parse Int Array") {
             {",suffix", false, {}, ",suffix"},
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             bool inArray = std::get<1>(tests.at(testIdx));
             std::vector<long> expected_vec = std::get<2>(tests.at(testIdx));
@@ -499,7 +499,7 @@ TEST_CASE("Parse Int Array") {
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             
             std::vector<long> vec;
@@ -553,7 +553,7 @@ TEST_CASE("Parse Num Array") {
             {"[1,2,3], suffix", false, {1,2,3}, ", suffix"}
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             bool inArray = std::get<1>(tests.at(testIdx));
             std::vector<double> expected_vec = std::get<2>(tests.at(testIdx));
@@ -562,7 +562,7 @@ TEST_CASE("Parse Num Array") {
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             
             std::vector<double> vec;
@@ -593,7 +593,7 @@ TEST_CASE("Parse Num Array") {
             {"1,2,3], suffix", false, {}, "1,2,3], suffix"},
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             bool inArray = std::get<1>(tests.at(testIdx));
             std::vector<double> expected_vec = std::get<2>(tests.at(testIdx));
@@ -602,7 +602,7 @@ TEST_CASE("Parse Num Array") {
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             
             std::vector<double> vec;
@@ -648,7 +648,7 @@ TEST_CASE("JsonParser::compilePath", "[compilePath]") {
             {"😀😃😄/😁😆😅/🤣😂🙂", {{"😀😃😄"}, {"😁😆😅"}, {"🤣😂🙂"}}},
         };
 
-        for(int testIdx=0; testIdx<tests.size(); testIdx++) {   
+        for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {   
             const char* path_str = std::get<0>(tests.at(testIdx));
             std::vector<PathSegment> expected_vec = std::get<1>(tests.at(testIdx));
 
@@ -721,7 +721,7 @@ TEST_CASE("JsonParser::next", "[private, next]") {
             {"😀😃😄😁😆😅🤣😂🙂🙃😉😊😇, 1", 1, "1"},
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             size_t n = std::get<1>(tests.at(testIdx));
             const char* json_after_exec = std::get<2>(tests.at(testIdx));
@@ -729,7 +729,7 @@ TEST_CASE("JsonParser::next", "[private, next]") {
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             REQUIRE(parser.next(n));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -759,7 +759,7 @@ TEST_CASE("JsonParser::next", "[private, next]") {
             {", \"1\": 1, \"2\": 2}", 3, "}"}
         };
 
-		for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+		for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
             size_t n = std::get<1>(tests.at(testIdx));
             const char* json_after_exec = std::get<2>(tests.at(testIdx));
@@ -767,7 +767,7 @@ TEST_CASE("JsonParser::next", "[private, next]") {
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
             REQUIRE_FALSE(parser.next(n));
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
@@ -778,9 +778,9 @@ TEST_CASE("JsonParser::next", "[private, next]") {
 TEST_CASE("JsonParser::skipWhitespace", "[private, skipWhitespace]") {
     JsonParser parser;
 
-    std::vector<std::tuple<const char*, const int, std::string>> tests {
-            {"", 0, ""},
-            {"\t\n\r ", 0, ""},
+    std::vector<std::tuple<const char*, int, std::string>> tests {
+            {"", -1, ""},
+            {"\t\n\r ", -1, ""},
             {"\"\t\n\r \"", '\"', "\"\t\n\r \""},
             {"  ,", ',' , ","},
             {"abc", 'a' , "abc"},
@@ -791,17 +791,17 @@ TEST_CASE("JsonParser::skipWhitespace", "[private, skipWhitespace]") {
             {"\r\n\t 😀😃😄", ((std::string)"😀")[0], "😀😃😄"},
         };
 
-        for(int testIdx=0; testIdx<tests.size(); testIdx++) {
+        for(unsigned int testIdx=0; testIdx<tests.size(); testIdx++) {
             const char* json = std::get<0>(tests.at(testIdx));
-            const int expectedFirstNonWhitespace = std::get<1>(tests.at(testIdx));
+            int expectedFirstNonWhitespace = std::get<1>(tests.at(testIdx));
             const char* json_after_exec = std::get<2>(tests.at(testIdx)).c_str();
 
             CAPTURE(testIdx);
             CAPTURE(json);
 
-            MockArduino::Native::MockStringStream stream = MockArduino::Native::MockStringStream(json);
+            ArduinoTestUtils::MockStream stream = ArduinoTestUtils::MockStream(json);
             parser.parse(stream);
-            char firstNonWhitespace = parser.skipWhitespace();
+            int firstNonWhitespace = parser.skipWhitespace();
             REQUIRE(firstNonWhitespace == expectedFirstNonWhitespace);
             CHECK_THAT(stream.readString().c_str(), Catch::Matchers::Equals(json_after_exec));
         }
